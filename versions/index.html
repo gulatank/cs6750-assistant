@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Four Answer Versions</title>
+<style>
+:root{--bg:#fafaf8;--ink:#191b1f;--mute:#5f635d;--line:#e3e3dd;--card:#fff;--acc:#1f3f9e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16181b;--ink:#eceef0;--mute:#a0a5ac;--line:#2c3037;--card:#1f2226;--acc:#8fa8f5}}
+:root[data-theme="dark"]{--bg:#16181b;--ink:#eceef0;--mute:#a0a5ac;--line:#2c3037;--card:#1f2226;--acc:#8fa8f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:22px;margin:0 0 6px}
+.lead{color:var(--mute);margin:0 0 20px;max-width:720px}
+.scn{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:28px;max-width:760px}
+.scn b{display:block;margin-top:6px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+nav a{color:var(--acc);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:14px}
+section{margin:0 0 40px;scroll-margin-top:12px}
+h2{font-size:18px;margin:0 0 4px}
+.cap{color:var(--mute);margin:0 0 12px;max-width:760px;font-size:15px}
+img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.missing{border:2px dashed var(--line);border-radius:10px;padding:40px 16px;text-align:center;color:var(--mute)}
+.back{font-size:15px;color:var(--mute);border-top:1px solid var(--line);padding-top:16px}
+</style>
+<div class="wrap">
+ <h1>Four ways of showing the same AI answer</h1>
+ <p class="lead">Look at all four versions, then go back to the survey tab. Click an image to open it full size.</p>
+ <div class="scn">The scenario: you moved to the US in March of last year. You kept a savings account in your home country holding about $9,000. You are also named on a joint account with a parent, which peaked at around $14,000 in July. You have never filed anything about either account.<b>Does the foreign-account reporting requirement apply to you?</b></div>
+ <nav><a href="#A">Version A</a><a href="#B">Version B</a><a href="#C">Version C</a><a href="#D">Version D</a></nav>
+ <section id="A"><h2>Version A</h2><p class="cap">The assistant answers directly.</p>
+  <a href="A-chatgpt.png" target="_blank"><img src="A-chatgpt.png" alt="Version A: ChatGPT's answer" style="max-width:820px"></a></section>
+ <section id="B"><h2>Version B</h2><p class="cap">The answer carries a label saying what kind of answer it is, and a panel showing what it rests on: sources used, things assumed about you, and the authority it did not consult. You can correct an assumption and the answer updates.</p>
+  <a href="B-basis-panel.png" target="_blank"><img src="B-basis-panel.png" alt="Version B: answer with a basis panel"></a></section>
+ <section id="C"><h2>Version C</h2><p class="cap">No answer yet. The assistant names the three facts that would change the answer and offers to tell you which parts would be guesswork if you skip them.</p>
+  <a href="C-the-gate.png" target="_blank"><img src="C-the-gate.png" alt="Version C: questions before the answer"></a></section>
+ <section id="D"><h2>Version D</h2><p class="cap">The answer appears beside the same question put to the official source, claim by claim, marked where they agree, disagree, or where the source says nothing.</p>
+  <a href="D-second-opinion.png" target="_blank"><img src="D-second-opinion.png" alt="Version D: answer beside the official source"></a></section>
+ <p class="back">Done? Go back to the survey tab.</p>
+</div>
+
+</html>

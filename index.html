@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calm Assistant</title>
+<!--
+  CALM VARIANT (8 Nov 2026): same data, logic and capabilities as calibrated.html, less visual load.
+  One column; conversation switcher in the header; slim sticky slider; plain assumption lines; one-line
+  verdict; one-line background offer; lighter timeline. calibrated.html is untouched.
+-->
+<!--
+  FINAL PROTOTYPE (medium/high fidelity, scripted). Second iteration of the CS6750 individual project.
+  One assistant, several conversations. "Foreign accounts" (FBAR) is the evaluated question; the others show the
+  same design across health (an OTC drug label), an official process (passport renewal) and three IRS rules.
+  Combines: stakes dial with the assistant's reading · receipt line, silent when nothing to warn · dots + source
+  opening under the sentence · "what I'm assuming about you" with origin labels · chips with a visible before/after ·
+  trust state + collapsed decision panel · rewind with forks · background checks with permission · hand-off with
+  what to bring and where to get it.
+  Deep links: #answer (evaluation link: FBAR at the answer) · #health · #passport · #roth · #wash · #est
+  Every quotation is verbatim: FinCEN FBAR Line Item Filing Instructions v1.4 (Jan 2017); FDA Drug Facts label,
+  Advil (ibuprofen) tablets, DailyMed setid 1a665e64-9f30-be37-4a83-38789f1f1e89, effective 3 Nov 2026; U.S.
+  Department of State "Renew Your Passport by Mail", updated 1 Oct 2026; IRS Pub 590-A (2025), Pub 550 (2025),
+  Form 1040-ES (2026). Background durations are compressed (one "minute" is about 5 seconds).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a single assistant. Header: title, stakes dial, background tray, history. Chat column centred;
+   the composer docked at the bottom with one suggested next question. */
+:root{--bg:#f2f3ef;--panel:#fbfbf8;--card:#ffffff;--soft:#f6f7f3;--hov:#e4e6df;--ink:#191b1f;--ink2:#474b52;--mute:#5f635d;--faint:#a9ada4;--line:#dfe1da;--line2:#cbcec5;
+ --acc:#1f3f9e;--accs:#e6ebf7;--onacc:#ffffff;--ok:#1e7a4a;--oks:#e1f1e7;--bad:#b42318;--bads:#fbe7e4;--inc:#94590a;--incs:#f8ecd6;--dat:#6b3fa0;--dats:#eee7f6;--unk:#5f635d;--unks:#ebece7;--inf:#20668a;--infs:#e0edf3;--ins:#d9efe1;
+ --bgl:#6b3fa0;--bgls:#efe8f7;--s1:#1e7a4a;--s2:#94590a;--s3:#c2410c;--s4:#9b1c1c;--handbg:#fcf4f3;--handline:#ebcac6;
+ --serif:"Source Serif 4",Georgia,serif;--sans:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--panel:#1b1e23;--card:#22262c;--soft:#1e2126;--hov:#2a2e35;--ink:#eceef0;--ink2:#c3c7cc;--mute:#959aa2;--faint:#5c6169;--line:#2c3037;--line2:#3a3f47;
+ --acc:#8fa8f5;--accs:#232c45;--onacc:#0f1420;--ok:#5cc58b;--oks:#173325;--bad:#f2867a;--bads:#3a1c1a;--inc:#e3b25e;--incs:#36290f;--dat:#c3a0ef;--dats:#2c2240;--unk:#a6aab0;--unks:#272a2f;--inf:#7dc3e3;--infs:#16303c;--ins:#1c3a29;
+ --bgl:#c3a0ef;--bgls:#2c2240;--s1:#5cc58b;--s2:#e3b25e;--s3:#f39465;--s4:#f2867a;--handbg:#2a1c1c;--handline:#5a2e2b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14161a;--panel:#1b1e23;--card:#22262c;--soft:#1e2126;--hov:#2a2e35;--ink:#eceef0;--ink2:#c3c7cc;--mute:#959aa2;--faint:#5c6169;--line:#2c3037;--line2:#3a3f47;
+ --acc:#8fa8f5;--accs:#232c45;--onacc:#0f1420;--ok:#5cc58b;--oks:#173325;--bad:#f2867a;--bads:#3a1c1a;--inc:#e3b25e;--incs:#36290f;--dat:#c3a0ef;--dats:#2c2240;--unk:#a6aab0;--unks:#272a2f;--inf:#7dc3e3;--infs:#16303c;--ins:#1c3a29;
+ --bgl:#c3a0ef;--bgls:#2c2240;--s1:#5cc58b;--s2:#e3b25e;--s3:#f39465;--s4:#f2867a;--handbg:#2a1c1c;--handline:#5a2e2b;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.app{height:100%;display:flex;flex-direction:column}
+header{flex:none;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{font:600 16px var(--serif)}.brand small{display:block;font:500 11px var(--sans);color:var(--mute)}
+.dial{display:flex;align-items:center;gap:8px;margin-left:auto}
+.dial .lab{font-size:11.5px;color:var(--mute);text-align:right;line-height:1.25}
+.dial .lab b{display:block;color:var(--ink);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{border:0;background:none;padding:5px 10px;font-size:12px;border-right:1px solid var(--line);position:relative}
+.seg button:last-child{border-right:0}
+.seg button.on{color:var(--onacc);font-weight:600}
+.seg .l1.on{background:var(--s1)}.seg .l2.on{background:var(--s2)}.seg .l3.on{background:var(--s3)}.seg .l4.on{background:var(--s4)}
+.seg button.auto::after{content:"";position:absolute;left:50%;top:1px;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--acc)}
+.hb{border:1px solid var(--line2);background:var(--card);border-radius:999px;padding:5px 12px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+.hb.on{border-color:var(--acc);color:var(--acc)}
+.hb .dot{width:8px;height:8px;border-radius:50%;background:var(--bgl);animation:pulse 1.2s infinite}@keyframes pulse{50%{opacity:.3}}
+.hb .cnt{background:var(--bgl);color:var(--onacc);border-radius:999px;padding:0 6px;font-size:11px;font-weight:700}
+main{flex:1;min-height:0;position:relative;display:flex}
+.chat{flex:1;overflow:auto;padding:8px 20px 150px}
+.chatin{max-width:740px;margin:0 auto}
+.side{width:360px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:14px}
+.um{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:24px 0 10px}
+.ub{background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:16px 16px 4px 16px;max-width:80%}
+.rw{border:0;background:none;color:var(--mute);font-size:11.5px;opacity:0;transition:.15s}.um:hover .rw,.rw:focus{opacity:1}
+.meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11.5px;color:var(--mute);flex-wrap:wrap}
+.av{width:20px;height:20px;border-radius:6px;background:var(--acc);color:var(--onacc);display:grid;place-items:center;font:700 10px var(--sans)}.av.bg{background:var(--bgl)}
+.sk{font:700 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase}.sk1{color:var(--s1)}.sk2{color:var(--s2)}.sk3{color:var(--s3)}.sk4{color:var(--s4)}
+.ans{font:16.5px/1.62 var(--serif)}
+.cl{cursor:pointer;border-radius:3px}.cl:hover{background:var(--hov)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 3px 2px 2px;vertical-align:middle}
+.d-disputed{background:var(--bad)}.d-incomplete{background:var(--inc)}.d-dated{background:var(--dat)}.d-unconfirmed{background:var(--unk)}.d-inferred{background:var(--inf)}
+.tag{display:inline-block;font:600 10.5px/1.6 var(--sans);padding:0 7px;border-radius:999px;margin-right:4px;white-space:nowrap}
+.t-agreed{background:var(--oks);color:var(--ok)}.t-disputed{background:var(--bads);color:var(--bad)}.t-incomplete{background:var(--incs);color:var(--inc)}.t-dated{background:var(--dats);color:var(--dat)}.t-unconfirmed{background:var(--unks);color:var(--unk)}.t-inferred{background:var(--infs);color:var(--inf)}
+.pop{display:block;margin:6px 0 10px;padding:6px 0 6px 12px;border-left:2px solid var(--acc);font:13.5px/1.5 var(--sans);color:var(--ink2)}
+blockquote{margin:6px 0;padding:6px 10px;border-left:3px solid var(--line2);background:var(--panel);font:13.5px/1.5 var(--serif);color:var(--ink2);border-radius:0 8px 8px 0}
+blockquote cite{display:block;font:500 11px var(--sans);font-style:normal;color:var(--mute);margin-top:3px}
+.chip{display:inline;border:1px dashed var(--acc);background:var(--accs);color:var(--acc);border-radius:6px;padding:0 5px;font:inherit}
+.menu{display:block;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:4px;margin:6px 0;font:13px var(--sans)}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 9px;border-radius:7px}.menu button:hover{background:var(--accs)}.menu button.on{font-weight:600}
+del{color:var(--bad);background:var(--bads);text-decoration-thickness:1.5px;border-radius:3px}ins{text-decoration:none;background:var(--ins);border-radius:3px}
+.rc{font-size:12px;color:var(--mute);margin-top:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13px}
+.card h5{margin:0 0 6px;font:600 10.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.fact{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}.fact:first-of-type{border-top:0}
+.fact .fl{min-width:160px;color:var(--ink2)}
+.org{font:600 10px var(--sans);letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:999px}
+.org.assumed{background:var(--incs);color:var(--inc)}.org.you{background:var(--oks);color:var(--ok)}.org.unknown{background:var(--unks);color:var(--unk)}
+.ob{border:1px solid var(--line2);background:var(--card);border-radius:999px;padding:2px 10px;font-size:12px}.ob.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.trust{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ts{font:700 11px/1.7 var(--sans);letter-spacing:.04em;text-transform:uppercase;padding:0 9px;border-radius:999px}
+.ts-ready{background:var(--oks);color:var(--ok)}.ts-gap{background:var(--incs);color:var(--inc)}.ts-check{background:var(--bads);color:var(--bad)}.ts-hand{background:var(--ink);color:var(--bg)}
+.tw{color:var(--ink2);font-size:13px}
+.dbtn{border:0;background:none;color:var(--acc);font-size:12.5px;text-decoration:underline;padding:0}
+.dec{display:flex;flex-direction:column;gap:8px}
+.kd{border:1px solid var(--line);border-radius:9px;padding:6px 9px;background:var(--soft)}.kd.flip{border-color:var(--bad);box-shadow:inset 3px 0 0 var(--bad)}
+.kd>span{font-weight:600;font-size:12.5px}.kd em{font-style:normal;font-weight:600;font-size:11px;color:var(--bad);margin-left:4px}.kd em.same{color:var(--ok)}
+.ko{font-size:12.5px;color:var(--ink2);padding:2px 0}.ko.cur{color:var(--ink)}
+.nm div{font-size:12.5px;color:var(--ink2);margin:2px 0}.nm b{display:inline-block;min-width:110px;color:var(--ink)}
+.hand{border:1px solid var(--handline);background:var(--handbg);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:13.5px}
+.hand h5{margin:0 0 6px;font:700 10.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--s4)}
+.hand ul{margin:4px 0 8px 18px;padding:0}.hand p{margin:0 0 6px}.hand small{color:var(--mute)}
+.dim{opacity:.55}.dimlab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:10px}
+.offer label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13px}.offer label small{display:block;color:var(--mute);font-size:12px}
+.btn{border:1px solid var(--line2);background:var(--card);border-radius:9px;padding:5px 11px;font-size:12.5px}
+.btn.pri{background:var(--bgl);border-color:var(--bgl);color:var(--onacc);font-weight:600}.btn.acc{background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pend{display:inline-block;font:600 10.5px/1.6 var(--sans);background:var(--bgls);color:var(--bgl);border-radius:999px;padding:0 7px;margin-left:3px;vertical-align:2px}
+.report{border-left:4px solid var(--bgl)}
+.sys{font-size:12.5px;color:var(--mute)}
+.tray{position:absolute;right:16px;top:8px;width:340px;background:var(--card);border:1px solid var(--line2);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:10px 12px;z-index:5}
+.task{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.task:first-of-type{border-top:0}.task small{color:var(--mute)}
+.bar{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:var(--bgl);transition:width .4s linear}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:16px 20px 14px;background:linear-gradient(to bottom,transparent,var(--bg) 35%)}
+.dockin{max-width:740px;margin:0 auto}
+.sg{border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink2);text-align:left;margin-bottom:8px;max-width:100%}
+.sg:hover{border-color:var(--acc);color:var(--acc)}.sg b{color:var(--acc);margin-right:4px}
+.comp{display:flex;gap:8px;background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:8px 8px 8px 14px}
+.comp input{flex:1;border:0;outline:none;background:none}.comp button{background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:6px 14px;font-weight:600}
+.empty{text-align:center;margin-top:90px;color:var(--mute);font:20px var(--serif)}
+.graph svg{display:block;max-width:100%}
+
+@media (max-width:820px){.side{position:absolute;inset:0 0 0 auto;width:min(360px,100%);z-index:6;box-shadow:-10px 0 30px rgba(0,0,0,.2)}.dial .lab{display:none}.tray{width:auto;left:16px}}
+
+.convs{width:240px;flex:none;border-right:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px 10px}
+.cv{display:block;width:100%;text-align:left;border:0;background:none;border-radius:9px;padding:8px 10px;margin-bottom:2px}
+.cv:hover{background:var(--hov)}.cv.on{background:var(--card);box-shadow:0 0 0 1px var(--line)}
+.cv b{display:block;font-size:13px;font-weight:600}.cv span{font-size:11.5px;color:var(--mute)}
+.h5{margin:0 0 8px;font:600 10.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.menu-btn{display:none}
+.empty small{display:block;font:13px var(--sans);margin-top:6px}
+.dock{left:240px}
+main.hastl .dock{right:230px}
+#mstrip:empty{display:none}
+#mstrip{position:sticky;top:0;z-index:4}
+.mstrip{max-width:740px;margin:0 auto 6px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:10px 14px 8px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.mstrip.flash{animation:flash 1s ease}@keyframes flash{0%{box-shadow:0 0 0 3px var(--acc)}100%{box-shadow:0 6px 18px rgba(0,0,0,.06)}}
+.mtop{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13.5px}.mfor{color:var(--mute);font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtrack{padding:6px 4px 0}
+#mslider{width:100%;margin:0;accent-color:var(--acc);height:26px;cursor:pointer}
+.mstops{display:flex;justify-content:space-between;gap:4px}
+.mst{flex:1;border:0;background:none;padding:2px 0;font-size:12.5px;color:var(--mute);text-align:center}
+.mst:first-child{text-align:left}.mst:last-child{text-align:right}
+.mst b{display:block;font-weight:500}.mst.on b{color:var(--ink);font-weight:700}.mst em{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--acc)}
+.mshow{font-size:12.5px;color:var(--ink2);margin-top:4px}
+.am.focus{box-shadow:-14px 0 0 -11px var(--acc)}
+.tline{width:230px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px 10px 140px}
+.tline[hidden]{display:none}
+.tlh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tlr{position:relative;display:flex;flex-direction:column;gap:14px;padding-left:4px}
+.tlr::before{content:"";position:absolute;left:12px;top:8px;bottom:8px;border-left:2px solid var(--line2)}
+.tlr.big{gap:18px}
+.tls{position:relative;display:flex;gap:8px;align-items:flex-start;border:0;background:none;padding:2px;text-align:left;border-radius:8px;width:100%}
+.tls:hover{background:var(--hov)}.tls.on{background:var(--accs)}
+.tls .lv{flex:none;display:block;width:18px;height:18px;border-radius:50%;border:3px solid var(--panel);box-shadow:0 0 0 1.5px var(--line2);margin-top:1px}
+.lv1{background:var(--card)}.lv2{background:var(--s2)}.lv3{background:var(--s3)}.lv4{background:var(--s4)}
+.tls.on .lv{box-shadow:0 0 0 2.5px var(--acc)}
+.tls span{font-size:12px;color:var(--ink2);line-height:1.35}.tls span b{display:block;font-size:11.5px;color:var(--ink);font-weight:600}
+.tlr:not(.big) .tls{width:auto}
+.tlrow{display:flex;align-items:flex-start;gap:4px}.tlrow .tls{flex:1;min-width:0}
+.tlr.big .tlrow{flex-direction:column;gap:2px}.tlr.big .tlback{margin-left:30px}
+.tlback{flex:none;border:1px solid var(--line2);background:var(--card);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--acc);white-space:nowrap;margin-top:1px}
+.tlback:hover{border-color:var(--acc)}
+.tlv{margin-bottom:12px}.tlv .pcard{margin:6px 0;padding:8px 10px}.tlv .pcard .po{font-size:13px}
+.tlhint{font-size:11.5px;margin-top:12px}
+.meta{flex-wrap:wrap}
+.sline{font-size:12.5px;color:var(--ink2)}.sline b{color:var(--ink);font-weight:600}
+.schoose{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:6px 0 4px}
+.schoose .sq{grid-column:1/-1;font:600 13px var(--sans);color:var(--ink)}
+.sopt{text-align:left;border:1px solid var(--line2);background:var(--card);border-radius:10px;padding:7px 9px;font-size:12.5px}
+.sopt.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc);background:var(--accs)}
+.sopt b{display:block;font-size:13px}.sopt em{font-style:normal;font-size:11px;color:var(--acc);font-weight:600}.sopt span{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.calc table{width:100%;border-collapse:collapse;font-size:13px}.calc td{padding:5px 6px;border-top:1px solid var(--line);vertical-align:middle}
+.calc tr:first-child td{border-top:0}.calc .res td{border-top:2px solid var(--line2);font-size:14px}
+.calc .cv2{white-space:nowrap}.cnote{font-size:12.5px;color:var(--ink2);margin:8px 0 4px}
+.org.src{background:var(--accs);color:var(--acc)}.org.mine{background:var(--infs);color:var(--inf)}
+.pcard{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;border:1px solid var(--line2);background:var(--card);border-radius:12px;padding:10px 12px;margin:8px 0}
+.pcard.here{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.pcard .pt{font:600 13px var(--sans)}.pcard .pt em{font-style:normal;font-size:11px;color:var(--onacc);background:var(--acc);border-radius:999px;padding:1px 8px;margin-left:6px}
+.pcard .pd{font-size:12.5px;color:var(--ink2)}.pcard .po{font:14px/1.4 var(--serif);color:var(--ink)}
+.steps summary{cursor:pointer;font-size:12.5px;color:var(--ink2);margin-top:8px}
+@media (max-width:980px){.tline{display:none}main.hastl .dock{right:0}.convs{position:absolute;inset:0 auto 0 0;z-index:7;display:none;box-shadow:10px 0 30px rgba(0,0,0,.2)}.convs.open{display:block}.menu-btn{display:inline-flex}.dock{left:0}}
+
+/* ======================= CALM LAYER ======================= */
+:root{--bg:#fafaf8;--panel:#fafaf8;--line:#ebebe6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16181b;--panel:#16181b;--line:#26292e}}
+:root[data-theme="dark"]{--bg:#16181b;--panel:#16181b;--line:#26292e}
+header{border-bottom:0;padding-block:12px;gap:8px 14px}
+.brand{font-size:15px}.brand small{font-size:11px}
+.cswitch{border:0;background:none;padding:4px 8px;border-radius:8px;font-size:13px;color:var(--ink2)}
+.cswitch:hover{background:var(--hov)}
+.hb{border:0;background:none;color:var(--mute);padding:4px 8px}.hb:hover{color:var(--ink);background:var(--hov)}
+.hb.on{color:var(--acc)}
+#dial{margin-left:auto}
+.convs,.convs.open{position:absolute;top:0;left:max(16px,calc(50% - 360px));width:280px;max-height:80%;z-index:8;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 14px 40px rgba(0,0,0,.14);display:none}
+.convs.open{display:block}
+.dock,main.hastl .dock{left:0}
+main.hastl .dock{right:200px}
+.chat{padding:4px 24px 160px}
+.chatin,.dockin{max-width:680px}
+/* slider: one slim row */
+.mstrip{max-width:680px;background:var(--bg);border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;padding:8px 2px 8px;margin-bottom:8px}
+.mstrip.flash{animation:cflash 1s ease}@keyframes cflash{0%{background:var(--accs)}100%{background:var(--bg)}}
+.mrow{display:flex;align-items:center;gap:14px;font-size:12.5px;color:var(--mute)}
+.mrow #mslider{flex:1;height:20px}
+.mcur{min-width:150px;color:var(--ink);font-weight:600;text-align:right}
+.mnote{font-size:12px;color:var(--mute);margin-top:1px}
+.mnote .dbtn{font-size:12px}
+/* answer */
+.um{margin:30px 0 12px}
+.ub{background:var(--hov);color:var(--ink);border-radius:14px 14px 4px 14px}
+.meta{margin-bottom:8px}
+.sline{font-size:12px;color:var(--mute)}.sline b{color:var(--ink2);font-weight:600}
+.ans{font-size:16.5px;line-height:1.7}
+.chip{border:0;border-bottom:1.5px dashed var(--acc);background:none;border-radius:0;padding:0 1px}
+.dot{width:6px;height:6px}
+.card{border:0;background:none;padding:0;margin-top:16px}
+.card h5,.hand h5{text-transform:none;letter-spacing:0;font:600 12.5px var(--sans);color:var(--ink2);margin-bottom:6px}
+/* assumptions as plain lines */
+.alist{margin-top:16px;font-size:13px;color:var(--ink2)}
+.aline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:5px 0}
+.aline .al{color:var(--ink2)}.aline .ao{font-size:12px;font-style:italic;color:var(--mute)}
+.aline .ao.open{color:var(--inc)}
+.seg2{display:inline-flex;gap:2px;flex-wrap:wrap}
+.seg2 button{border:0;background:none;border-radius:999px;padding:2px 10px;font-size:12.5px;color:var(--mute)}
+.seg2 button:hover{background:var(--hov);color:var(--ink)}
+.seg2 button.on{background:var(--ink);color:var(--bg)}
+/* one-line verdict */
+.trust{margin-top:18px;gap:6px 10px;font-size:13px}
+.ts{all:unset;display:inline-flex;align-items:center;gap:7px;font:600 13px var(--sans);color:var(--ink)}
+.ts::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.ts-gap::before{background:var(--inc)}.ts-check::before{background:var(--bad)}.ts-hand::before{background:var(--s4)}
+.tw{color:var(--mute);font-size:13px}
+.rc{font-size:12px;color:var(--mute);margin-top:6px}.rc b{font-weight:500}
+.dec{margin-top:10px;padding-left:16px;border-left:2px solid var(--line)}
+.kd{border:0;background:none;padding:4px 0}.kd.flip{box-shadow:none}.kd.flip>span{color:var(--bad)}
+/* background offer as one line */
+.oline{margin-top:14px;font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.oline .btn{border:0;background:var(--accs);color:var(--acc);font-weight:600;border-radius:999px;padding:3px 12px}
+.offer{margin-top:8px;padding-left:16px;border-left:2px solid var(--line)}
+.hand{background:none;border:0;border-left:2px solid var(--s4);border-radius:0;padding:2px 0 2px 14px}
+.report{border-left:2px solid var(--bgl);padding-left:14px}
+blockquote{background:none;border-left:2px solid var(--line2)}
+.pop{border-left-width:1.5px}
+.av{display:none}
+/* lighter timeline */
+.tline{width:200px;border-left:0;background:none;padding:14px 10px 140px}
+.tlr::before{border-left:1px solid var(--line2)}
+.tls .lv{width:12px;height:12px;border-width:2px;margin:3px 3px 0}
+.tlr::before{left:10px}
+.tls span{font-size:12px;color:var(--mute)}.tls.on span{color:var(--ink)}
+.tls.on{background:none}.tls.on .lv{box-shadow:0 0 0 2px var(--acc)}
+.tlback{border:0;background:none;padding:0 4px;font-size:12px;opacity:0;transition:opacity .15s}
+.tlrow:hover .tlback,.tlback:focus-visible,.tlr.big .tlback{opacity:1}
+.tlr.big .tlback{opacity:.7}.tlr.big .tlback:hover{opacity:1}
+.tlhint{color:var(--mute)}
+.pcard{border-color:var(--line);background:none}
+.dock{background:linear-gradient(to bottom,transparent,var(--bg) 40%)}
+.sg{border:0;background:none;padding:2px 2px;color:var(--mute)}.sg b{font-weight:600}
+.comp{border-color:var(--line);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.side{border-left:1px solid var(--line)}
+@media (max-width:980px){main.hastl .dock{right:0}}
+.am.focus{box-shadow:-14px 0 0 -12px var(--line2)}
+.h5{text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink2)}
+</style>
+
+<div class="app">
+ <header>
+  <div class="brand">Assistant<small>Prototype · scripted · not advice</small></div>
+  <button class="cswitch" id="cswitch" data-act="convs" aria-label="Switch conversation"></button>
+  <div class="dial" id="dial"></div>
+  <button class="hb" id="bgbtn" data-act="tray">Background checks</button>
+  <button class="hb" id="hsbtn" data-act="side">History</button>
+ </header>
+ <main id="main">
+  <nav class="convs" id="convs" aria-label="Conversations"></nav>
+  <div class="chat" id="chat"><div id="mstrip"></div><div class="chatin" id="chatin"></div></div>
+  <nav class="tline" id="tline" aria-label="Conversation timeline"></nav>
+  <aside class="side" id="side" hidden></aside>
+  <div class="tray" id="tray" hidden></div>
+  <div class="dock"><div class="dockin"><div id="sugg"></div><div class="comp"><input id="ta" placeholder="Message the assistant" aria-label="Message"><button data-act="send">Send</button></div></div></div>
+ </main>
+</div>
+
+<script>
+/* ======================= SOURCES — verbatim; "…" marks an omission, [brackets] a table read as text ======================= */
+const DOCS={
+ fbar:{n:'FinCEN FBAR filing instructions',d:'Jan 2017 (v1.4)'},
+ label:{n:'FDA Drug Facts label, ibuprofen 200 mg tablets (Advil), DailyMed',d:'effective Nov 3, 2026'},
+ passport:{n:'U.S. Department of State, Renew Your Passport by Mail',d:'updated Oct 1, 2026'},
+ treasury:{n:'U.S. Treasury, Treasury Reporting Rates of Exchange',d:'retrieved Nov 7, 2026'},
+ p590a:{n:'IRS Publication 590-A',d:'2025 edition'},p550:{n:'IRS Publication 550',d:'2025 edition'},es:{n:'IRS Form 1040-ES',d:'2026 edition'}};
+const Q={
+ due:['fbar','The FBAR must be received by the Department of the Treasury on or before April 15th of the year immediately following the calendar year being reported. FinCEN will grant filers failing to meet the FBAR annual due date of April 15th an automatic extension to October 15th each year.'],
+ agg:['fbar','A United States person that has a financial interest in or signature authority over foreign financial accounts must file an FBAR if the aggregate value of the foreign financial accounts exceeds $10,000 at any time during the calendar year.'],
+ joint:['fbar','Each joint owner must report the entire value of the account as determined under Item 15.'],
+ pen:['fbar','A person who is required to file an FBAR and fails to properly file may be subject to a civil penalty not to exceed $10,000 per violation… A person who willfully fails to report an account or account identifying information may be subject to a civil monetary penalty equal to the greater of $100,000 or 50 percent of the balance in the account at the time of the violation.'],
+ rate:['fbar','…convert the maximum account value for each account into United States dollars. Convert foreign currency by using the Treasury\'s Financial Management Service rate (select Exchange Rates under Reference & Guidance at www.fms.treas.gov) for the last day of the calendar year. If no Treasury Financial Management Service rate is available, use another verifiable exchange rate and provide the source of that rate.'],
+ usp:['fbar','United States person means United States citizens (including minor children); United States residents; entities, …'],
+ l_dose:['label','adults and children 12 years and over: take 1 tablet every 4 to 6 hours while symptoms persist if pain or fever does not respond to 1 tablet, 2 tablets may be used do not exceed 6 tablets in 24 hours, unless directed by a doctor'],
+ l_ask:['label','Ask a doctor before use if … you have high blood pressure, heart disease, liver cirrhosis, kidney disease, asthma, or had a stroke … you are taking a diuretic'],
+ l_heart:['label','Heart attack and stroke warning: NSAIDs, except aspirin, increase the risk of heart attack, heart failure, and stroke. These can be fatal. The risk is higher if you use more than directed or for longer than directed.'],
+ l_pharm:['label','Ask a doctor or pharmacist before use if you are under a doctor\'s care for any serious condition'],
+ tr_1231:['treasury','[India-Rupee · record date 2025-12-31 · 89.854 rupees per US dollar]'],
+ tr_latest:['treasury','[India-Rupee · record date 2026-09-30 · 95.83 rupees per US dollar]'],
+ w_ex:['p550','Example 1. You buy 100 shares of X stock for $1,000. You sell these shares for $750 and within 30 days from the sale you buy 100 shares of the same stock for $800. Because you bought substantially identical stock, you cannot deduct your loss of $250 on the sale. However, you add the disallowed loss of $250 to the cost of the new stock, $800, to obtain your basis in the new stock, which is $1,050.'],
+ p_fee:['passport','[Passport Book · DS-82 · $130]'],
+ p_15:['passport','Your passport was issued within the last 15 years.'],
+ p_inperson:['passport','If you don’t meet the requirements to renew your passport, you must apply again in person. This includes if your passport was lost or stolen, or was issued more than 15 years ago.'],
+ p_name:['passport','If the name you are using is different from the name on your most recent U.S. passport, you must provide a certified copy of the legal name change document.'],
+ p_appt:['passport','If you are traveling in less than 3 weeks, make an appointment. Your appointment must be within 14 calendar days of your travel date.'],
+ p_exp:['passport','For faster (2-3 weeks) expedited service, add $60 to your application fee.'],
+ r_6:['p590a','A 6% excise tax applies to any excess contribution to a Roth IRA.'],
+ r_due:['p590a','In general, if the excess contributions for a year aren’t withdrawn by the date your return for the year is due (including extensions), you are subject to a 6% tax.'],
+ r_wd:['p590a','You won’t have to pay the 6% tax if you withdraw an excess contribution made during a tax year and you also withdraw any interest or other income earned on the excess contribution.'],
+ r_rech:['p590a','You may be able to treat a contribution made to one type of IRA as having been made to a different type of IRA. This is called recharacterizing the contribution.'],
+ r_apply:['p590a','If contributions to your Roth IRA for a year were more than the limit, you can apply the excess contribution in 1 year to a later year if the contributions for that later year are less than the maximum allowed for that year.'],
+ w_no:['p550','You cannot deduct losses from sales or trades of stock or securities in a wash sale unless the loss was incurred in the ordinary course of your business as a dealer in stock or securities.'],
+ w_def:['p550','A wash sale occurs when you sell or trade stock or securities at a loss and within 30 days before or after the sale you: 1. Buy substantially identical stock or securities, … 4. Acquire substantially identical stock for your individual retirement arrangement (IRA) or Roth IRA.'],
+ w_sub:['p550','In determining whether stock or securities are substantially identical, you must consider all the facts and circumstances in your particular case. Ordinarily, stocks or securities of one corporation are not considered substantially identical to stocks or securities of another corporation.'],
+ w_basis:['p550','If your loss was disallowed because of the wash sale rules, add the disallowed loss to the cost of the new stock or securities (except in (4) above).'],
+ e_rule:['es','In most cases, you must pay estimated tax for 2026 if both of the following apply. 1. You expect to owe at least $1,000 in tax for 2026, after subtracting your withholding and refundable credits. 2. You expect your withholding and refundable credits to be less than the smaller of: a. 90% of the tax to be shown on your 2026 tax return, or b. 100% of the tax shown on your 2025 tax return.'],
+ e_12:['es','Your 2025 tax return must cover all 12 months.'],
+ e_hi:['es','If your adjusted gross income (AGI) for 2025 was more than $150,000 ($75,000 if your filing status for 2026 is married filing separately), substitute 110% for 100% in (2b) under General Rule, earlier.'],
+ e_dates:['es','You can pay all of your estimated tax by April 15, 2026, or in four equal amounts by the dates shown below. [1st payment: April 15, 2026 · 2nd: June 15, 2026 · 3rd: Sept. 15, 2026 · 4th: Jan. 15, 2027]'],
+ e_pen:['es','If your payments are late or you didn’t pay enough, you may be charged a penalty for underpaying your tax.'],};
+
+/* ======================= CONVERSATIONS ======================= */
+const FBAR_HAND={say:'',who:'A CPA or enrolled agent who handles international filings',bring:['The highest balance of each foreign account last year','Statements showing those balances','The date you became a US resident'],where:['Your banks\' year-end statements or online account history','The same statements, downloaded as PDFs','Your visa, entry stamp or I-94 travel record'],start:'The IRS page “Delinquent FBAR Submission Procedures” lists the official routes for late filers.'};
+const SCN={
+fbar:{title:'Foreign accounts',cat:'Official filing',sub:'FBAR · the evaluated question',
+ facts:{bal:{label:'Highest balance of the home account',opts:[['810000','₹810,000'],['650000','₹650,000'],['950000','₹950,000']],def:'810000',said:1},
+        joint:{label:'Joint account counted as',opts:[['half','your half, about $7,000'],['full','the full $14,000']],def:'half'},
+        resid:{label:'US tax resident last year',opts:[['yes','you were a resident'],['no','you were not a resident'],['unsure','not sure you were a resident']],def:null}},
+ hand:FBAR_HAND,
+ tasks:{current:{t:'Check whether these rules have been replaced',min:3,res:'The instructions I used are version 1.4, released January 2017. I couldn\'t confirm from them whether they\'ve been replaced; FinCEN\'s FBAR page is where to check. Nothing in your answer changes.',tag:'nothing changed'},
+        resid:{t:'Work out residency for your arrival date',min:4,res:'<b>Residency is the fact that decides this.</b> The FBAR rule covers “United States residents”, but the instructions don\'t say how residency is decided. IRS residency rules do (Publication 519). Your own return for last year, resident or dual-status, is the quickest answer.',q:'usp',tag:'this is the deciding fact'}},
+ turns:[
+ {q:'When is the FBAR due?',st:1,why:'a date lookup',risks:[],short:()=>'April 15, with an automatic extension to October 15.',
+  claims:()=>[{t:'It is due April 15 of the year after the one you are reporting.',m:'agreed',src:['due']},{t:'Miss that and FinCEN grants an automatic extension to October 15; you do not have to ask for it.',m:'agreed',src:['due']}]},
+ {q:'I moved to the US last March. I have a savings account back home (about $9,000) and I\'m on a joint account with my parent that peaked around $14,000 in July. I\'ve never filed anything. Does the foreign-account reporting requirement apply to me?',
+  st:3,why:'government filing · penalties · hard to undo',risks:['Hard to undo'],offer:['current','resid'],uses:['joint','resid'],
+  short:f=>f.resid==='no'?'Probably not: this rule likely didn\'t apply to you last year.':f.resid==='unsure'?'It depends: very likely yes if you were a US resident last year, probably not if you weren\'t.':'Very likely yes: about '+(f.joint==='full'?'$23,000':'$16,000')+' across both accounts, over the $10,000 line.',
+  trace:f=>f.joint==='full'?'$9,000 + $14,000 (the joint account in full) = about $23,000':'$9,000 + $7,000 (half of the $14,000 joint account, assumed) = about $16,000',
+  claims:f=>{const full=f.joint==='full';return[
+   {t:'The rule looks at the combined value of all your foreign accounts, not each one on its own.',m:'agreed',src:['agg']},
+   {t:'The line is $10,000 at any point in the year, not just the year-end balance.',m:'agreed',src:['agg']},
+   {t:full?'For the joint account I count the full $14,000, so your total is about $23,000.':'For the joint account I counted your half, about $7,000, so your total is about $16,000.',chip:full?'the full $14,000':'your half, about $7,000',asm:'joint',m:full?'agreed':'disputed',src:['joint'],note:full?'Now matches the source.':'The source says each joint owner reports the entire value. Either way you are over $10,000.'},
+   {t:'Not filing can lead to penalties, higher if it is considered willful.',m:'incomplete',src:['pen'],note:'Right, but it leaves out the size: up to the greater of $100,000 or half the account balance if willful.'},
+   {t:f.resid==='no'?'Since you were not a resident, this filing rule probably didn\'t apply to you last year.':'So you very likely needed to file for last year, if you were a US resident then.',m:f.resid==='yes'?'inferred':'unconfirmed',note:'The source states the rule, not your situation. Residency decides it.'}];},
+  change:['Whether you were a US resident last year: you arrived in March.','Whether either account was not in fact in your name.','A newer version of the rules: this document dates from January 2017.']},
+ {q:'One account is in my home currency. Which exchange rate do I use?',st:2,why:'a calculation for a filing',risks:[],
+  calc:f=>{const b=+f.bal,u=b/89.854,l=b/95.83,r=x=>Math.round(x).toLocaleString('en-US');return{title:'How I converted it',
+   rows:[{l:'Highest balance during the year',v:'₹'+b.toLocaleString('en-US'),o:'you',fact:'bal'},{l:'Treasury rate for Dec 31, 2025',v:'89.854 rupees per dollar',o:'src',src:'tr_1231'},{l:'₹'+b.toLocaleString('en-US')+' ÷ 89.854',v:'$'+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),o:'mine'}],
+   res:{l:'In US dollars',v:'about $'+r(u)},note:'With the latest rate instead (95.83, Sept 30, 2026) you would get about $'+r(l)+', which understates it. The rule says to use the last day of the calendar year.'+(u>10000&&l<=10000?' Here that matters: the right rate puts this account alone over the $10,000 line, and the wrong one would put it under.':u>10000?' This account alone is over the $10,000 line.':''),src2:'tr_latest'};},
+  short:()=>'The Treasury rate for December 31, applied to each account\'s highest balance.',
+  claims:()=>[{t:'Convert each account\'s highest value to US dollars at the Treasury rate for the last day of the year.',m:'agreed',src:['rate']},
+   {t:'If the Treasury has no rate for your currency, any verifiable rate works, as long as you say where it came from.',m:'agreed',src:['rate']},
+   {t:'The rate is published on the Treasury Financial Management Service website.',m:'dated',src:['rate'],note:'The source gives a 2017 web address for this. Check it still leads to the rate.'}]},
+ {q:'Wait, I only arrived in March. Do I even count as a US person for last year?',st:3,why:'decides whether any of this applies',risks:[],
+  ask:{key:'resid',prompt:'One thing first: were you a US tax resident last year? Your return for that year will say: resident or dual-status.',opts:[['yes','Yes, I was'],['no','No, I wasn\'t'],['unsure','I\'m not sure']]},
+  short:f=>f.resid==='yes'?'Yes. As a resident you count, so the earlier answer stands.':f.resid==='no'?'Probably not, so this rule likely didn\'t apply to you last year.':'It turns on your residency last year, and this source cannot settle that.',
+  claims:f=>[{t:'For FBAR, a “United States person” includes US citizens and US residents.',m:'agreed',src:['usp']},
+   {t:'This source lists residents but does not say how residency is decided.',m:'unconfirmed',note:'IRS residency rules decide it (Publication 519). Your own return for last year, resident or dual-status, is the quickest answer.'},
+   {t:f.resid==='yes'?'Since you were a resident, the filing rule applies to you for last year.':f.resid==='no'?'Since you were not a resident, the rule probably didn\'t apply.':'Since you are not sure you were a resident, that is the one fact that decides this.',chip:f.resid==='yes'?'you were a resident':f.resid==='no'?'you were not a resident':'not sure you were a resident',asm:'resid',m:'inferred'}]},
+ {q:'OK, so I may have missed it. What should I do now? Should I just file it late?',st:4,why:'possible missed filing · legal exposure',risks:['Hard to undo'],
+  short:()=>'Not one to decide alone. Here is who to take it to, and what to bring.',
+  claims:()=>[{t:'This depends on facts I cannot check and choices that are hard to undo, so I will not pick the path for you.',m:'inferred'}],hand:FBAR_HAND}]},
+
+health:{title:'Headache medicine',cat:'Health',sub:'An over-the-counter label',
+ facts:{bp:{label:'High blood pressure',opts:[['yes','you have high blood pressure'],['no','you don\'t have high blood pressure']],def:'yes',said:1},
+        diur:{label:'Your water pill is a diuretic',opts:[['yes','I took your water pill to be one'],['no','your water pill isn\'t one'],['unsure','you aren\'t sure whether your water pill is one']],def:'yes'}},
+ hand:{say:'This is a question about your own medicines, which a pharmacist can check against your prescriptions.',who:'A pharmacist, or the doctor who prescribed your blood-pressure medicine',bring:['The names and doses of all your medicines','How often you expect to need a painkiller'],where:['The pharmacy label on each bottle','Your own estimate'],start:'Ask at the pharmacy counter: “Is ibuprofen OK with my blood-pressure medicines?”'},
+ tasks:{},
+ turns:[
+ {q:'What\'s the usual dose of Advil for a headache?',st:2,why:'a medicine dose',risks:[],
+  short:()=>'1 tablet every 4 to 6 hours, 2 if 1 doesn\'t work, and no more than 6 in 24 hours.',
+  claims:()=>[{t:'Adults take 1 tablet every 4 to 6 hours while symptoms last; if 1 doesn\'t work, 2 may be used.',m:'agreed',src:['l_dose']},
+   {t:'Don\'t take more than 6 tablets in 24 hours unless a doctor tells you to.',m:'agreed',src:['l_dose']}]},
+ {q:'I have high blood pressure and take a water pill for it. Is it OK for me to take Advil?',st:3,why:'health · a medicine interaction',risks:[],uses:['bp','diur'],handAt3:1,
+  short:f=>f.bp==='yes'||f.diur==='yes'?'Ask a pharmacist first: the label says to, for people in your situation.':f.diur==='unsure'?'It depends on what your water pill is: ask a pharmacist.':'The label\'s standard directions apply to you.',
+  claims:f=>[{t:'The label says to ask a doctor before use if you have high blood pressure.',m:'agreed',src:['l_ask']},
+   {t:f.diur==='yes'?'It says the same if you take a diuretic, and I took your water pill to be one.':f.diur==='no'?'It says the same for diuretics, and your water pill isn\'t one.':'It says the same for diuretics, and you aren\'t sure whether your water pill is one.',chip:f.diur==='yes'?'I took your water pill to be one':f.diur==='no'?'your water pill isn\'t one':'you aren\'t sure whether your water pill is one',asm:'diur',m:'inferred',src:['l_ask'],note:'“Water pill” usually means a diuretic, but I can\'t see your prescription.'},
+   {t:'Ibuprofen also carries a heart attack and stroke warning that covers every NSAID except aspirin.',m:'agreed',src:['l_heart']},
+   {t:'So the label\'s own advice for you is to ask a doctor or pharmacist before taking it.',m:'inferred'},
+   {t:'Whether an occasional dose is fine for you depends on your other medicines, which I can\'t see.',m:'unconfirmed',note:'Neither the label nor I can settle this; a pharmacist can.'}],
+  change:['Whether your water pill is a diuretic.','Any other medicines you take, including aspirin.','Your doctor\'s own advice, which comes before the label.']}]},
+
+passport:{title:'Passport renewal',cat:'Official process',sub:'Renewing by mail',
+ facts:{issued:{label:'Passport issued',opts:[['within','within the last 15 years'],['over','more than 15 years ago'],['unsure','not sure when']],def:'within'},
+        doc:{label:'Certified name-change document',opts:[['yes','you have a certified copy'],['no','you don\'t have one yet']],def:null}},
+ hand:{say:'',who:'A passport agency or center, if you end up traveling in less than 3 weeks',bring:['Your most recent passport','A certified copy of your marriage certificate','One passport photo'],where:['The passport itself','The vital records office that recorded your marriage','A photo shop or pharmacy'],start:'travel.state.gov, “Renew by Mail”.'},
+ tasks:{},
+ turns:[
+ {q:'How much does it cost to renew a passport book?',st:1,why:'a fee lookup',risks:[],short:()=>'$130 by mail, with form DS-82.',
+  claims:()=>[{t:'Renewing a passport book by mail with form DS-82 costs $130.',m:'agreed',src:['p_fee']}]},
+ {q:'My passport was issued in 2011, and I\'ve since married and changed my last name. I fly to London in 5 weeks. Can I just renew by mail?',st:3,why:'official process · a trip at risk',risks:[],uses:['issued','doc'],
+  ask:{key:'doc',prompt:'One thing first: do you have a certified copy of your marriage certificate?',opts:[['yes','Yes'],['no','Not yet']]},
+  short:f=>f.issued==='over'?'No: a passport issued more than 15 years ago means applying again in person.':f.issued==='unsure'?'It depends on the exact issue date: within 15 years you can mail it; otherwise apply in person.':f.doc==='no'?'Not yet: you need a certified copy of your marriage certificate first.':'Yes, by mail, with a certified copy of your marriage certificate.',
+  claims:f=>[{t:'You can renew by mail if your passport was issued within the last 15 years.',m:'agreed',src:['p_15']},
+   f.issued==='over'?{t:'Since yours was issued more than 15 years ago, you must apply again in person.',chip:'more than 15 years ago',asm:'issued',m:'agreed',src:['p_inperson']}
+   :f.issued==='unsure'?{t:'Since you\'re not sure when in 2011 it was issued, check the issue date printed in it.',chip:'not sure when',asm:'issued',m:'inferred',note:'More than 15 years ago means applying in person.'}
+   :{t:'Yours was issued in 2011, which I took to be within the last 15 years.',chip:'within the last 15 years',asm:'issued',m:'inferred',note:'It is now November 2026, so a 2011 passport is close to the line. The issue date printed in it decides this.'},
+   {t:'Because your name changed, you also need a certified copy of the legal name-change document, such as your marriage certificate.',m:'agreed',src:['p_name']},
+   {t:'With 5 weeks before you fly, you don\'t need an appointment; those are for travel in less than 3 weeks.',m:'agreed',src:['p_appt']},
+   {t:'Expedited service takes 2 to 3 weeks and costs $60 more.',m:'agreed',src:['p_exp']},
+   {t:'This page doesn\'t say how long routine service takes, so I can\'t tell you whether it will arrive in 5 weeks.',m:'unconfirmed',note:'Processing times are published separately and change.'}],
+  change:['The exact issue date in your passport.','Whether you have the certified marriage certificate.','How soon you actually travel.']}]},
+roth:{title:'Roth IRA over the limit',cat:'Retirement money',sub:'An excess contribution',
+ goals:[['fix','Fix it before it costs me'],['understand','Understand what went wrong'],['cheap','Fix it without paying anyone']],
+ next:{fix:'Next for this goal: pick a fix before your 2026 return is due.',understand:'Next for this goal: compare this year\'s income limit with your final pay.',cheap:'Next for this goal: your IRA provider carries out every fix at no charge to you.'},
+ facts:{magi:{label:'Income against the Roth limit',opts:[['under','under the limit'],['phase','Inside the phase-out range'],['over','Above the range']],def:null}},
+ hand:{say:'At this setting I lay out the options but won\'t choose for you.',bring:['Your contribution dates and amounts','An estimate of this year\'s income'],where:['Your IRA provider\'s contribution history','Your last pay stub of the year, or your W-2 when it arrives'],who:'Your IRA provider, or a tax preparer',start:'Ask how to remove or recharacterize an excess Roth contribution.'},
+ turns:[
+ {q:'What\'s the difference between a Roth IRA and a traditional IRA?',st:1,why:'a general explanation',risks:[],
+  short:()=>'Traditional: deduct now, pay tax later. Roth: pay tax now, withdraw tax-free later.',
+  claims:()=>[{t:'Traditional IRA contributions may be deductible now, and withdrawals are taxed later.',m:'unconfirmed',note:'General knowledge. At Everyday stakes no source was checked.'},
+   {t:'Roth IRA contributions are not deductible, and qualified withdrawals come out tax-free.',m:'unconfirmed',note:'General knowledge. At Everyday stakes no source was checked.'}]},
+ {q:'I put $7,000 into my Roth this year, but I got a raise and may have earned too much. Is that a problem?',st:3,why:'money · a tax penalty · a deadline',risks:['Money','Deadline'],
+  ask:{key:'magi',prompt:'Roughly where did your income land against this year\'s Roth income limit?',opts:[['under','Under the limit'],['phase','Inside the phase-out range'],['over','Above the range']]},
+  due:'Your 2026 return is normally due April 15, 2027.',
+  short:f=>({under:'No: under the limit there is nothing to fix.',phase:'Partly: some of it is excess, taxed 6% unless you take it out in time.',over:'Yes: all $7,000 is excess, taxed 6% unless you take it out in time.'})[f.magi],
+  claims:f=>{const c={under:{t:'If you are under the limit, the full contribution is allowed and there is nothing to fix.',chip:'under the limit',m:'inferred',note:'Limits change every year; this year\'s table is in Publication 590-A.'},
+     phase:{t:'Inside the phase-out range, only part of the $7,000 is allowed; the rest is an excess contribution.',chip:'Inside the phase-out range',m:'unconfirmed',note:'The reduced-limit worksheet in Publication 590-A gives the exact allowed amount. It was not retrieved here.'},
+     over:{t:'Above the range, the whole $7,000 counts as an excess contribution.',chip:'Above the range',m:'unconfirmed',note:'Follows from the limit; the passage stating it was not retrieved.'}}[f.magi];c.asm='magi';
+   if(f.magi==='under')return[c];
+   return[c,{t:'A 6% excise tax applies to an excess contribution to a Roth IRA.',m:'agreed',src:['r_6']},
+    {t:'You avoid it if you withdraw the excess, plus whatever it earned, before your return is due.',m:'agreed',src:['r_due','r_wd']},
+    {t:'The tax applies again for each year the excess stays in.',m:'unconfirmed',note:'Widely stated, but not in the passages retrieved here.'}];},
+  change:['Your final income for the year, including the raise.','Whether you also contributed to a traditional IRA this year.']},
+ {q:'What are my options to fix it?',st:3,why:'choosing between fixes that are hard to undo',risks:['Money','Hard to undo'],
+  short:()=>'Three: withdraw it, recharacterize it, or apply it to a later year.',
+  claims:()=>[{t:'Withdraw the excess, together with what it earned, before your return is due.',m:'agreed',src:['r_wd']},
+   {t:'Recharacterize it: treat the contribution as if it had gone into a traditional IRA instead.',m:'agreed',src:['r_rech']},
+   {t:'Or apply the excess to a later year in which you contribute less than the maximum.',m:'agreed',src:['r_apply']},
+   {t:'Which is best depends on next year\'s income and whether a traditional IRA contribution would be deductible for you.',m:'inferred'}],
+  change:['Your income next year.','Whether a traditional IRA contribution would be deductible for you.','How much the excess has earned since you put it in.']},
+ {q:'Just tell me which one to do. I\'d rather not pay anyone.',st:3,why:'you asked me to choose for you',risks:['Money'],
+  short:()=>'I\'ll show which fix fits which situation rather than pick one for you.',
+  claims:()=>[{t:'If you expect to be over the limit again next year, applying the excess to a later year will not help.',m:'inferred'},
+   {t:'If you want the money to stay in retirement savings, recharacterizing keeps it there.',m:'inferred'},
+   {t:'If you want the cleanest exit, withdrawing the excess and its earnings ends the problem this year.',m:'inferred'}],
+  hand:{say:'You don\'t need to pay anyone for this step.',bring:['Your contribution dates and amounts','An estimate of this year\'s income'],where:['Your IRA provider\'s contribution history','Your last pay stub of the year, or your W-2 when it arrives'],who:'Your IRA provider carries out a withdrawal or a recharacterization',start:'Ask them how to remove or recharacterize an excess Roth contribution.'}}
+ ]},
+
+wash:{title:'Selling at a loss',cat:'Investing',sub:'The wash-sale rule',
+ goals:[['keep','Keep the tax loss'],['stay','Stay invested in the market'],['understand','Understand the rule']],
+ next:{keep:'Next for this goal: check every account, including your IRA, for purchases within 30 days of the sale.',stay:'Next for this goal: decide whether a different-index fund is close enough for you.',understand:'Next for this goal: read the “substantially identical” passage in Publication 550.'},
+ facts:{newcost:{label:'Cost of the new shares',opts:[['800','$800'],['900','$900'],['700','$700']],def:'800'},repl:{label:'What you would buy instead',opts:[['same','the same fund'],['other','a fund from another company tracking the same index'],['diffidx','a fund tracking a different index']],def:'other'},
+        ira:{label:'IRA bought within the window',opts:[['yes','your IRA bought within the window'],['no','the IRA did not buy within the window'],['unsure','not sure about the IRA\'s purchase dates']],def:null}},
+ hand:{say:'At this setting I won\'t give a final answer on my own.',bring:['Your trade confirmations for 30 days either side of the sale','Purchase history from every account, including IRAs'],where:['Each broker\'s trade confirmations page','Each account\'s transaction history, including the IRA'],who:'A tax preparer who handles investment income',start:'Publication 550, the section on wash sales.'},
+ turns:[
+ {q:'I sold some index fund shares at a loss last week. Can I buy back in right away?',st:2,why:'a tax loss on a trade',risks:['Money','Deadline'],
+  due:'The window closes 30 days after your sale date.',
+  short:()=>'Not without losing the deduction. Wait out the 30 days.',
+  claims:()=>[{t:'If you buy substantially identical shares within 30 days before or after the sale, it is a wash sale.',m:'agreed',src:['w_def']},
+   {t:'In a wash sale you cannot deduct the loss.',m:'agreed',src:['w_no']},
+   {t:'So buying back right away would make it a wash sale; waiting past 30 days after the sale avoids that.',m:'inferred',note:'Follows from the 30-day window, provided you bought none in the 30 days before.'}]},
+ {q:'What if I buy a different fund that tracks a similar index instead?',st:3,why:'the source is silent on this exact case',risks:['Money'],
+  short:f=>({same:'Yes, that is a wash sale.',other:'Unclear: the IRS publication does not settle it.',diffidx:'Probably safer, but the publication does not settle it.'})[f.repl],
+  claims:f=>[{t:'Whether two holdings are “substantially identical” depends on all the facts and circumstances.',m:'agreed',src:['w_sub']},
+   ({same:{t:'Buying back the same fund is clearly a wash sale.',chip:'the same fund',m:'agreed',src:['w_def']},
+     other:{t:'For a fund from another company tracking the same index, the publication does not say either way.',chip:'a fund from another company tracking the same index',m:'unconfirmed',note:'This is the gap: the source is silent on exactly your case.'},
+     diffidx:{t:'For a fund tracking a different index, the case for “not identical” is stronger, but the publication does not say so.',chip:'a fund tracking a different index',m:'unconfirmed'}})[f.repl],
+   {t:'The publication does say shares of one company are ordinarily not identical to another company\'s.',m:'incomplete',src:['w_sub'],note:'Written about company stock, not funds. Close to your case, but not your case.'}].map(c=>(c.chip?Object.assign(c,{asm:'repl'}):c))},
+ {q:'My IRA buys the same fund automatically every month. Does that matter?',st:3,why:'the loss could be lost for good',risks:['Money','Hard to undo'],
+  ask:{key:'ira',prompt:'Did your IRA buy the fund in the 30 days before or after your sale?',opts:[['yes','Yes'],['no','No'],['unsure','Not sure']]},
+  short:f=>({yes:'Yes, and it is the worst version: the loss may not carry over.',no:'Not for this sale.',unsure:'It might. Check the purchase dates.'})[f.ira],
+  claims:f=>[{t:'Buying substantially identical shares in your IRA or Roth IRA within the window also counts as a wash sale.',m:'agreed',src:['w_def']},
+   ({yes:{t:'Since your IRA bought within the window, this is a wash sale, and the usual rule of adding the loss to the new shares\' cost excludes the IRA case.',chip:'your IRA bought within the window',m:'incomplete',src:['w_basis'],note:'Read closely: “except in (4) above”. Item (4) is the IRA case. The source does not say what happens to the loss instead.'},
+     no:{t:'Since the IRA did not buy within the window, its purchases do not affect this sale.',chip:'the IRA did not buy within the window',m:'inferred'},
+     unsure:{t:'Since you are not sure about the IRA\'s purchase dates, check them: one automatic buy inside the window is enough.',chip:'not sure about the IRA\'s purchase dates',m:'inferred'}})[f.ira]].map(c=>(c.chip?Object.assign(c,{asm:'ira'}):c)),
+  change:['The IRA\'s exact purchase dates.','Whether the IRA holds the same fund or a different share class of it.']},
+ {q:'If it is a wash sale, is the loss gone for good?',st:2,why:'explains a consequence',risks:['Money'],
+  calc:f=>{const c=+f.newcost,ex=S().origin.newcost!=='you';return{title:'How the loss carries over',
+   rows:[{l:'Loss you couldn\'t deduct',v:'$250',o:'ex'},{l:'Cost of the new shares',v:'$'+c,o:ex?'ex':'you',fact:'newcost'},{l:'$250 + $'+c,v:'$'+(250+c).toLocaleString('en-US'),o:'mine'}],
+   res:{l:'Your basis in the new shares',v:'$'+(250+c).toLocaleString('en-US')},note:'The loss is postponed, not lost: it counts when you sell the new shares. Numbers start from the IRS\'s own example; change the cost to yours.',src:'w_ex'};},
+  short:()=>'Usually postponed, not lost. The IRA case is the exception.',
+  claims:()=>[{t:'For an ordinary wash sale, no: add the disallowed loss to the cost of the new shares.',m:'agreed',src:['w_basis']},
+   {t:'That lowers your gain, or raises your loss, when you eventually sell the new shares.',m:'inferred'},
+   {t:'The exception is the IRA case, which the source carves out of this rule.',m:'incomplete',src:['w_basis'],note:'The carve-out is stated; what replaces the rule is not.'}]}
+ ]},
+
+est:{title:'Freelance taxes',cat:'Side income',sub:'Quarterly estimated tax',
+ goals:[['avoid','Avoid a penalty'],['plan','Plan payments for next year'],['understand','Understand the rule']],
+ next:{avoid:'Next for this goal: pay the missed amount before January 15, 2027.',plan:'Next for this goal: compare 100% (or 110%) of last year\'s tax with this year\'s estimate.',understand:'Next for this goal: read the General Rule on page 1 of Form 1040-ES.'},
+ facts:{w2:{label:'Day job withholds tax',opts:[['yes','your job withholds'],['no','nothing is withheld']],def:null},
+        hi:{label:'Last year\'s AGI',opts:[['no','$150,000 or less'],['yes','over $150,000']],def:'no'}},
+ hand:{say:'At this setting I won\'t give a final answer on my own.',bring:['Last year\'s tax return','Year-to-date freelance income and expenses','Your most recent pay stub'],where:['Your own files, or your IRS online account','Your invoices or payment-app reports','Your payroll portal'],who:'A tax preparer or enrolled agent',start:'Form 1040-ES, and Form 2210 for the underpayment penalty.'},
+ turns:[
+ {q:'I started freelancing this year on top of my day job. Do I need to pay quarterly taxes?',st:2,why:'money · recurring deadlines',risks:['Money','Deadline'],
+  ask:{key:'w2',prompt:'Does your day job withhold tax from your pay?',opts:[['yes','Yes'],['no','No']]},
+  short:()=>'Probably, if the freelance income adds $1,000 or more of tax.',
+  claims:f=>[{t:'You generally must pay estimated tax if you expect to owe at least $1,000 after withholding and credits,',m:'agreed',src:['e_rule']},
+   {t:'and your withholding will cover less than 90% of this year\'s tax or 100% of last year\'s, whichever is smaller.',m:'agreed',src:['e_rule']},
+   f.w2==='yes'?{t:'Because your job withholds, raising that withholding is another way to cover the freelance tax.',chip:'your job withholds',asm:'w2',m:'inferred',note:'The source counts withholding toward the rule; using it this way is my suggestion.'}
+              :{t:'Because nothing is withheld, the tax on this income comes due through estimated payments.',chip:'nothing is withheld',asm:'w2',m:'inferred'}]},
+ {q:'When are the payments due?',st:2,why:'deadlines',risks:['Deadline'],due:'Next payment: January 15, 2027.',
+  short:()=>'Quarterly. The next one is January 15, 2027.',
+  claims:()=>[{t:'For 2026: April 15, June 15, September 15, and January 15, 2027.',m:'agreed',src:['e_dates']},
+   {t:'You can also pay the whole year\'s estimate by April 15.',m:'agreed',src:['e_dates']},
+   {t:'Today is November 7, so the next one is January 15, 2027, about ten weeks away.',m:'inferred',note:'Worked out from today\'s date.'}]},
+ {q:'I missed the September one. How bad is that?',st:3,why:'a penalty may already be running',risks:['Money','Deadline'],
+  short:()=>'A penalty is possible. Paying now limits it.',
+  claims:()=>[{t:'If your payments are late or too small, you may be charged a penalty for underpaying.',m:'agreed',src:['e_pen']},
+   {t:'This form does not say how that penalty is calculated.',m:'unconfirmed',note:'The calculation is not in Form 1040-ES. IRS Form 2210 is where to look.'},
+   {t:'Paying the missed amount now, rather than waiting for January, shortens how long you are underpaid.',m:'inferred',note:'My inference; not stated in the source.'}],
+  change:['How much tax the freelance income actually adds.','Whether your withholding already covers 100% of last year\'s tax.']},
+ {q:'Is there a safe amount I can pay so I\'m not penalized?',st:3,why:'you will act on the number',risks:['Money'],
+  short:f=>f.hi==='yes'?'110% of last year\'s tax.':'100% of last year\'s tax.',
+  claims:f=>[{t:'Paying 100% of last year\'s tax, through withholding and estimates together, meets the rule.',m:'agreed',src:['e_rule']},
+   f.hi==='yes'?{t:'Because your 2025 AGI was over $150,000, that becomes 110%.',chip:'over $150,000',asm:'hi',m:'agreed',src:['e_hi']}
+               :{t:'That assumes your 2025 AGI was $150,000 or less; above that it becomes 110%.',chip:'$150,000 or less',asm:'hi',m:'agreed',src:['e_hi']},
+   {t:'Your 2025 return must have covered all 12 months for this to apply.',m:'agreed',src:['e_12']}],
+  change:['Last year\'s AGI.','Whether last year\'s return covered a full 12 months.']}
+ ]}};
+
+/* ======================= STATE: one history tree per conversation ======================= */
+const clone=o=>JSON.parse(JSON.stringify(o));
+function init(id){const sc=SCN[id],f={},o={};for(const[k,d]of Object.entries(sc.facts)){f[k]=d.def;o[k]=d.said?'you':d.def==null?'unknown':'assumed';}return{turns:[],facts:f,origin:o,stakes:null,stakesAt:{},tasks:{},reports:[]};}
+const ST={};for(const id in SCN){const s=init(id);ST[id]={s,H:[{label:'Start',snap:clone(s),parent:-1}],cur:0};}
+let CV='fbar';
+const X=()=>ST[CV],S=()=>X().s,C=()=>SCN[CV];
+let UI={open:{},menu:null,dec:{},before:null,tray:false,side:false,convs:false};
+function commit(l){const x=X();x.H.push({label:l,snap:clone(x.s),parent:x.cur});x.cur=x.H.length-1;render();}
+function go(i){const x=X();x.cur=i;x.s=clone(x.H[i].snap);UI.open={};UI.menu=null;UI.before=null;render();}
+const kids=i=>X().H.map((h,j)=>h.parent===i?j:-1).filter(j=>j>=0);
+function path(i=X().cur){const p=[];for(;i>=0;i=X().H[i].parent)p.unshift(i);return p;}
+const branched=()=>X().H.some((h,i)=>kids(i).length>1);
+const T=k=>C().turns[k];
+const lastN=()=>S().turns.length-1,nextK=()=>S().turns.length;
+const stakesOf=n=>(S().stakesAt&&S().stakesAt[n]!=null)?S().stakesAt[n]:T(S().turns[n]).st;
+const NAMES=['','Just curious','Good to get right','Really matters','Too big to decide alone'];
+const SHOWS=['','the short answer','the answer and where it comes from','my sources, what I assumed about you, and what would change the answer','who to ask and what to bring, with my answer kept for reference'];
+const FQ={resid:'were you a US tax resident last year?',joint:'how is the joint account counted?',issued:'when exactly was your passport issued?',doc:'do you have a certified copy of your marriage certificate?',diur:'is your water pill a diuretic?',bp:'do you have high blood pressure?',magi:'where did your income land against the Roth limit?',ira:'did your IRA buy the same fund within 30 days?',repl:'does the fund you would buy count as identical?',w2:'does your job withhold tax?',hi:'what was last year\'s AGI?'};
+const claimsOf=k=>{const cs=T(k).claims(S().facts);return T(k).st>=3?[...cs.filter(c=>c.src),...cs.filter(c=>!c.src)]:cs;};
+const needsAsk=k=>T(k).ask&&S().origin[T(k).ask.key]==='unknown';
+const factLabel=(f,v)=>{const o=C().facts[f].opts.find(x=>x[0]===v);return o?o[1]:'not known yet';};
+const MK={agreed:'Matches source',disputed:'Source disagrees',incomplete:'Right, but incomplete',dated:'Source may be dated',unconfirmed:'Source is silent',inferred:'My inference'};
+const SH={agreed:'match',disputed:'disputed',incomplete:'incomplete',dated:'possibly dated',unconfirmed:'unsupported',inferred:'inference'};
+const SKL=['','Everyday','Worth checking','High','Critical'];
+const SPEED=5;
+
+/* ======================= PIECES ======================= */
+const tag=m=>`<span class="tag t-${m}">${MK[m]}</span>`;
+const quote=id=>`<blockquote>“${Q[id][1]}”<cite>${DOCS[Q[id][0]].n} · ${DOCS[Q[id][0]].d}</cite></blockquote>`;
+function chipify(c){if(!c.asm||!c.chip||!c.t.includes(c.chip))return c.t;
+ const menu=UI.menu===c.asm?`<span class="menu">${C().facts[c.asm].opts.map(([v,l])=>`<button class="${S().facts[c.asm]===v?'on':''}" data-fact="${c.asm}=${v}">${l}</button>`).join('')}</span>`:'';
+ return c.t.replace(c.chip,`<button class="chip" data-menu="${c.asm}">${c.chip} ▾</button>`)+menu;}
+function receipt(n){const k=S().turns[n],cs=claimsOf(k),cnt={};cs.forEach(c=>cnt[c.m]=(cnt[c.m]||0)+1);
+ if(stakesOf(n)===1&&cs.every(c=>c.m==='agreed'))return'';
+ const docs=[...new Set(cs.flatMap(c=>(c.src||[]).map(q=>Q[q][0])))];
+ return`<div class="rc">${docs.length?'Checked '+docs.map(d=>`<b>${DOCS[d].n}</b> (${DOCS[d].d})`).join(', '):'<b>Not checked against a source</b>'} · ${Object.keys(MK).filter(m=>cnt[m]).map(m=>`${cnt[m]} ${SH[m]}`).join(', ')}</div>`;}
+function usedFacts(k){const t=T(k);return[...new Set(claimsOf(k).filter(c=>c.asm).map(c=>c.asm).concat(t.ask?[t.ask.key]:[]).concat(t.uses||[]))];}
+const verdictOf=x=>x.split(/[:.,]/)[0].trim().toLowerCase();
+function dps(k){return usedFacts(k).map(f=>{const outs=C().facts[f].opts.map(([v,l])=>({v,l,out:T(k).short({...S().facts,[f]:v})}));return{f,outs,flips:new Set(outs.map(o=>verdictOf(o.out))).size>1};});}
+const isOpen=f=>S().origin[f]==='assumed'||S().facts[f]==null||S().facts[f]==='unsure';
+
+function stakesLine(n){const k=S().turns[n],t=T(k),auto=t.st,st=stakesOf(n),set=S().stakesAt&&S().stakesAt[n]!=null,cs=claimsOf(k);
+ const why=t.why?t.why.replace(/ · /g,', '):'';
+ let txt;
+ if(!set)txt=`I'm treating this as <b>${NAMES[st].toLowerCase()}</b>${st>=2&&why?`: ${why}`:''}.`;
+ else if(st<auto){const dis=cs.some(c=>c.m==='disputed'),gap=cs.some(c=>c.m!=='agreed');txt=`Got it, keeping it ${st===1?'short':'lighter'}.${dis?' <b>Heads up:</b> one thing here doesn\'t match the official source.':gap?' <b>Heads up:</b> some of this isn\'t backed by a source.':''}`;}
+ else txt=`Got it, showing more.`;
+ const open=UI.sopen&&UI.sopen[CV+n];
+ return`<div class="sline">${txt} <button class="dbtn" data-focus="${n}" aria-expanded="${!!open}">${open?'close':'change'}</button>${set?` <button class="dbtn" data-stakes="${n}:auto">use my suggestion</button>`:''}</div>
+ ${open?`<div class="schoose" role="group" aria-label="How much does this matter to you?"><div class="sq">How much does this matter to you?</div>${[1,2,3,4].map(v=>`<button class="sopt${st===v?' on':''}" data-stakes="${n}:${v}" aria-pressed="${st===v}"><b>${NAMES[v]}</b>${v===auto?' <em>my suggestion</em>':''}<span>Shows ${SHOWS[v]}</span></button>`).join('')}</div>`:''}`;}
+const answeredIdx=()=>S().turns.map((k,i)=>i).filter(i=>!needsAsk(S().turns[i]));
+function focusN(){const a=answeredIdx();if(!a.length)return null;const f=(UI.focus||{})[CV];return a.includes(f)?f:a[a.length-1];}
+function stripHTML(){const n=focusN();if(n==null)return'';const k=S().turns[n],auto=T(k).st,st=stakesOf(n);
+ const set=S().stakesAt&&S().stakesAt[n]!=null;
+ return`<div class="mstrip"><div class="mrow"><span>How much does this matter?</span><input type="range" id="mslider" min="1" max="4" step="1" value="${st}" aria-label="How much does this matter to you?" aria-valuetext="${NAMES[st]}"><span class="mcur" id="mcur">${NAMES[st]}</span></div>
+  <div class="mnote"><span id="mshow">Shows ${SHOWS[st]}.</span> ${set?`<button class="dbtn" data-stakes="${n}:auto">use my suggestion (${NAMES[auto].toLowerCase()})</button>`:`<span>That is my suggestion; drag to change it.</span>`}</div></div>`;}
+function backNode(i){return path().find(j=>X().H[j].snap.turns.length===i+1);}
+function tlineHTML(){const a=answeredIdx();if(!a.length)return'';const f=focusN(),big=UI.tlBig!=null?UI.tlBig:(a.length>=3||branched());
+ return`<div class="tlh"><span class="h5" style="margin:0">Timeline</span><button class="dbtn" data-act="tlsize">${big?'smaller':'larger'}</button></div>
+ ${branched()?`<div class="tlv"><div class="sys" style="margin:0 0 2px">Your versions · click to switch</div>${pathCards()}</div>`:''}
+ <div class="tlr${big?' big':''}">${a.map(i=>{const k=S().turns[i],st=stakesOf(i),q=T(k).q,bn=backNode(i);return`<div class="tlrow"><button class="tls${i===f?' on':''}" data-jump="${i}" title="${NAMES[st]}: ${q.replace(/"/g,'&quot;')}"><i class="lv lv${st}"></i>${big?`<span><b>${NAMES[st]}</b>${q.length>54?q.slice(0,52)+'…':q}</span>`:''}</button>${bn!=null?`<button class="tlback" data-go="${bn}" title="Go back to here: the conversation returns to how it was when this was answered. Change something and you get a second version; nothing is lost." aria-label="Go back to here">↺${big?' go back to here':''}</button>`:''}</div>`;}).join('')}</div>
+ <p class="sys tlhint">${branched()?'':'↺ goes back to any answer. Change something from there and you get a second version; nothing is lost.'}</p>`;}
+function calcCard(n){const k=S().turns[n],t=T(k);if(!t.calc)return'';const c=t.calc(S().facts),id='calc'+CV+n;
+ const OL={you:'you told me',ex:'from the IRS example',src:'official source',mine:'my arithmetic'};
+ return`<div class="card calc"><h5>${c.title}</h5><table>${c.rows.map(r=>`<tr><td>${r.l}</td><td class="cv2">${r.fact?C().facts[r.fact].opts.map(([v,l])=>`<button class="ob${S().facts[r.fact]===v?' on':''}" data-fact="${r.fact}=${v}">${l}</button>`).join(' '):`<b>${r.v}</b>`}</td><td><span class="org ${r.o==='src'?'src':r.o==='mine'?'mine':r.o==='ex'?'assumed':'you'}">${OL[r.o]}</span></td></tr>`).join('')}
+  <tr class="res"><td>${c.res.l}</td><td colspan="2"><b>${c.res.v}</b></td></tr></table>${c.note?`<p class="cnote">${c.note}</p>`:''}
+  <button class="dbtn" data-open="${id}">${UI.open[id]?'Hide the sources':'Show the sources'}</button>${UI.open[id]?[c.rows.find(r=>r.src)?.src,c.src,c.src2].filter(Boolean).map(quote).join(''):''}</div>`;}
+const fq=f=>FQ[f]||('your '+C().facts[f].label.toLowerCase()+'?');
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+function trust(n){const k=S().turns[n],cs=claimsOf(k),st=stakesOf(n),h=T(k).hand||C().hand;
+ if(st===4)return['hand','Talk to a person first',h.who];
+ const dis=cs.find(c=>c.m==='disputed');if(dis)return['check','Before you act, check','the official source disagrees with “'+dis.t.slice(0,58)+'…”'];
+ const op=dps(k).find(d=>d.flips&&isOpen(d.f));if(op)return['check','Before you act, find out',fq(op.f)];
+ if(T(k).handAt3)return['hand','Talk to a person first',h.who];
+ const as=usedFacts(k).find(f=>S().origin[f]==='assumed');if(as)return['check','Before you act, confirm','I assumed '+factLabel(as,S().facts[as])];
+ const gap=cs.filter(c=>c.m!=='agreed').length;if(gap)return['gap','Good to go, with '+gap+' loose end'+(gap>1?'s':''),gap+' sentence'+(gap>1?'s aren\'t':' isn\'t')+' backed by a source'];
+ return['ready','Good to go','everything here matches a source'];}
+function oneCheck(k){const d=dps(k).find(d=>d.flips&&isOpen(d.f));if(d)return cap(fq(d.f));
+ const dis=claimsOf(k).find(c=>c.m==='disputed');return dis?'Check the sentence the official source disagrees with.':null;}
+function assumeCard(k){const fs=usedFacts(k);if(!fs.length)return'';
+ return`<div class="alist">${fs.map(f=>{const o=S().origin[f],ol=o==='assumed'?'I assumed':o==='unknown'?'not known yet':'you told me';
+  return`<div class="aline"><span class="al">${C().facts[f].label}</span><span class="ao${o!=='you'?' open':''}">${ol}</span><span class="seg2">${C().facts[f].opts.map(([v,l])=>`<button class="${S().facts[f]===v?'on':''}" data-fact="${f}=${v}" aria-pressed="${S().facts[f]===v}">${l}</button>`).join('')}</span></div>`;}).join('')}</div>`;}
+function decide(n){const k=S().turns[n],t=T(k),[cls,lab,why]=trust(n),open=UI.dec[CV+n],d=dps(k),oc=oneCheck(k),h=t.hand||C().hand;
+ return`<div class="trust"><span class="ts ts-${cls}">${lab}</span><span class="tw">${why}</span>${stakesOf(n)>=3?`<button class="dbtn" data-dec="${n}">${open?'Hide':'Help me decide'}</button>`:''}</div>
+ ${open?`<div class="card dec">${t.trace?`<div><h5>How I got the total</h5>${t.trace(S().facts)}</div>`:''}
+  ${d.length?`<div><h5>Which facts change the answer</h5>${d.map(x=>`<div class="kd${x.flips?' flip':''}"><span>${C().facts[x.f].label}${x.flips?' <em>changes the answer</em>':' <em class="same">doesn\'t change the answer</em>'}</span>${x.outs.map(o=>`<div class="ko${S().facts[x.f]===o.v?' cur':''}"><b>If ${o.l}:</b> ${o.out}</div>`).join('')}</div>`).join('')}</div>`:''}
+  ${(t.risks||[]).includes('Hard to undo')?`<div style="color:var(--s4);font-weight:600">Hard to undo: acting on this can't easily be reversed.</div>`:''}
+  ${t.change?`<div><h5>Other things that could change it</h5><ul style="margin:0;padding-left:18px">${t.change.map(c=>`<li>${c}</li>`).join('')}</ul></div>`:''}
+  <div class="nm"><h5>Your options</h5><div><b>Go ahead</b>${cls==='ready'?'Nothing here is unverified.':cls==='hand'?'Not recommended without a person\'s advice.':'You can, but this is still open: '+why+(why.endsWith('?')?'':'.')}</div><div><b>Find out first</b>${oc||'Nothing outstanding.'}</div><div><b>Ask an expert</b>${h.who}</div></div></div>`:''}`;}
+function handCard(h){return`<div class="hand"><h5>Talk to a person first</h5>${h.say?`<p>${h.say}</p>`:''}<p><b>Who:</b> ${h.who}</p><b>Bring</b><ul>${h.bring.map((b,i)=>`<li>${b}${h.where&&h.where[i]?` <small>· get it from: ${h.where[i]}</small>`:''}</li>`).join('')}</ul><p style="margin:0"><b>Start here:</b> ${h.start}</p></div>`;}
+function offer(n){const k=S().turns[n],keys=(T(k).offer||[]).filter(t=>!S().tasks[t]);if(!keys.length||stakesOf(n)<3)return'';
+ const id='offer'+CV+n,mins=Math.max(...keys.map(t=>C().tasks[t].min));
+ return`<div class="oline"><span>I can double-check ${keys.length===1?'one thing':keys.length+' things'} in the background (about ${mins} min, official documents only).</span><button class="btn" data-act="run">Run ${keys.length===1?'it':'them'}</button><button class="dbtn" data-open="${id}">${UI.open[id]?'hide':'choose'}</button></div>
+ <div class="offer" ${UI.open[id]?'':'hidden'}>${keys.map(t=>`<label><input type="checkbox" data-task="${t}" checked><span>${C().tasks[t].t}<small>about ${C().tasks[t].min} min · I'll come back to you</small></span></label>`).join('')}</div>`;}
+function answer(n){const k=S().turns[n],t=T(k),st=stakesOf(n);
+ if(needsAsk(k))return`<div class="card"><div style="font:15.5px/1.5 var(--serif);margin-bottom:8px">${t.ask.prompt}</div><div class="row">${t.ask.opts.map(([v,l])=>`<button class="ob" data-answer="${t.ask.key}=${v}">${l}</button>`).join('')}</div><div class="sys" style="margin-top:6px">I'm asking because this one fact changes the answer.</div></div>`;
+ const cs=claimsOf(k),running=Object.values(S().tasks).some(x=>x.status==='running')&&t.offer;
+ const sentence=(c,ci)=>{const id=CV+n+'.'+ci,old=UI.before&&UI.before[n]&&c.asm?UI.before[n][c.asm]:null,txt=chipify(c);
+  const body=old&&old!==c.t?`<del>${old}</del> <ins>${txt}</ins>`:txt;
+  const mark=st>=2&&c.m!=='agreed'?`<span class="dot d-${c.m}" title="${MK[c.m]}"></span>`:'';
+  const pend=running&&c.m==='unconfirmed'?'<span class="pend">checking…</span>':'';
+  return`<span class="cl" data-open="${id}">${body}</span>${mark}${pend}${UI.open[id]?`<span class="pop">${tag(c.m)}${(c.src||[]).map(quote).join('')}${c.note?`<span>${c.note}</span>`:''}${!c.src?'<span>No source passage behind this sentence.</span>':''}</span>`:' '}`;};
+ const h=t.hand||C().hand;
+ if(st===4)return`${handCard(h)}<div class="dimlab">For reference, not a final answer</div><div class="dim ans">${cs.map(sentence).join('')}</div>${decide(n)}`;
+ if(st===1)return`<div class="ans">${cs.map(c=>chipify(c)).join(' ')}</div>${receipt(n)}`;
+ return`<div class="ans">${cs.map(sentence).join('')}</div>${calcCard(n)}${st>=3?assumeCard(k):''}${st>=3&&(t.handAt3||t.hand)?handCard(h):''}${decide(n)}${receipt(n)}${offer(n)}`;}
+function report(r){const tk=(C().tasks||{})[r.k];return`<div class="meta"><span class="av bg">BG</span><b style="color:var(--ink)">Back from checking</b><span>· ${tk.t.toLowerCase()} · ${tk.tag}</span></div><div class="card report">${tk.res}${tk.q?quote(tk.q):''}${tk.q?`<div class="row"><button class="btn acc" data-dec="${r.after}">Show what it changes</button></div>`:''}</div>`;}
+
+/* ======================= RENDER ======================= */
+const $=id=>document.getElementById(id);
+function graph(){const H=X().H,L=[],D=[],seen={};let nl=0;H.forEach((h,i)=>{if(i===0){L[0]=0;D[0]=0;return;}const p=h.parent;D[i]=D[p]+1;seen[p]=(seen[p]||0)+1;L[i]=seen[p]===1?L[p]:++nl;});
+ const XS=36,YS=34,on=path(),W=20+Math.max(...D)*XS+20,Hh=20+nl*YS+10,pt=i=>[14+D[i]*XS,14+L[i]*YS];
+ return`<svg width="${W}" height="${Hh}">${H.map((h,i)=>{if(!i)return'';const[a,b]=pt(h.parent),[c,d]=pt(i);return`<path d="M${a},${b} C${a+XS/2},${b} ${c-XS/2},${d} ${c},${d}" fill="none" style="stroke:${on.includes(i)?'var(--acc)':'var(--line2)'}" stroke-width="2"/>`;}).join('')}
+ ${H.map((h,i)=>{const[x,y]=pt(i);return`<g data-go="${i}" style="cursor:pointer"><title>${h.label}</title><circle cx="${x}" cy="${y}" r="${i===X().cur?7:5}" style="fill:${on.includes(i)?'var(--acc)':'var(--card)'};stroke:${on.includes(i)?'var(--acc)':'var(--faint)'}" stroke-width="2"/></g>`;}).join('')}</svg>`;}
+function outcomeOf(snap){let best=null;snap.turns.forEach(k=>{const t=T(k);if(t.ask&&snap.origin[t.ask.key]==='unknown')return;if(!best||t.st>=T(best).st)best=k;});return best==null?'No answer yet':T(best).short(snap.facts);}
+function pathCards(){const H=X().H,leaves=H.map((h,i)=>i).filter(i=>!kids(i).length);
+ return leaves.map((i,ix)=>{const sn=H[i].snap,set=Object.keys(sn.origin).filter(f=>sn.origin[f]==='you'&&!C().facts[f].said).map(f=>`${C().facts[f].label}: <b>${factLabel(f,sn.facts[f])}</b>`);
+  const here=i===X().cur||(path(i).includes(X().cur)&&kids(X().cur).length<=1);
+  return`<button class="pcard${here?' here':''}" data-go="${i}"><span class="pt">Version ${ix+1}${here?' <em>you are here</em>':''}</span><span class="pd">${set.length?set.join('<br>'):'Nothing changed by you'}</span><span class="po">${outcomeOf(sn)}</span></button>`;}).join('');}
+function sideHTML(){const list=[];(function rec(i,d){list.push([i,d]);kids(i).forEach((k,j)=>rec(k,j?d+1:d));})(0,0);
+ return`<h5 class="h5">History</h5>${branched()?`<p class="sys">You have two versions of this conversation. Click one to switch; nothing is lost.</p>${pathCards()}<details class="steps"><summary>All steps</summary>`:`<p class="sys">Every step is saved. Click any step to go back to it. If you change something from there, you'll get a second version, and the first one is kept.</p>`}
+ ${list.map(([i,d])=>`<button class="ob${i===X().cur?' on':''}" style="display:block;width:calc(100% - ${d*14}px);margin:4px 0 0 ${d*14}px;text-align:left;border-radius:8px;${path().includes(i)?'':'opacity:.55'}" data-go="${i}">${X().H[i].label}</button>`).join('')}${branched()?'</details>':''}`;}
+function trayHTML(){const ts=Object.entries(S().tasks);
+ return`<b style="font-size:13px">Background checks</b>${ts.length?ts.map(([k,t])=>{const p=Math.min(1,(Date.now()-t.start)/(t.dur*1000));return`<div class="task">${(C().tasks||{})[k].t}<br><small>${t.status==='done'?'Done · reported back':'Running · about '+Math.max(1,Math.ceil((C().tasks||{})[k].min*(1-p)))+' min left'}</small><div class="bar"><i style="width:${t.status==='done'?100:p*100}%"></i></div></div>`;}).join(''):'<p class="sys">Nothing running in this conversation. I offer checks when an answer would benefit from one.</p>'}`;}
+function render(){
+ const n=lastN(),st=S().turns.length?stakesOf(n):null,auto=S().turns.length?T(S().turns[n]).st:null;
+ $('convs').innerHTML=`<h5 class="h5">Switch conversation</h5>`+Object.entries(SCN).map(([id,s])=>`<button class="cv${id===CV?' on':''}" data-conv="${id}"><b>${s.title}</b><span>${s.cat} · ${s.sub}</span></button>`).join('');
+ $('convs').classList.toggle('open',UI.convs);$('cswitch').innerHTML=`${C().title} <span style="color:var(--mute)">▾</span>`;
+ $('dial').innerHTML='';
+ const running=Object.values(S().tasks).filter(t=>t.status==='running').length;
+ $('bgbtn').innerHTML=`${running?'<span class="dot"></span>':''}Background checks${running?` <span class="cnt">${running} running</span>`:''}`;$('bgbtn').classList.toggle('on',UI.tray);
+ $('hsbtn').innerHTML=`History${branched()?' <span class="cnt" style="background:var(--acc)">branched</span>':''}`;$('hsbtn').classList.toggle('on',UI.side);
+ renderChat();
+ $('mstrip').innerHTML=stripHTML();$('tline').innerHTML=tlineHTML();$('tline').hidden=!answeredIdx().length;$('main').classList.toggle('hastl',answeredIdx().length>0);
+ const nq=nextK()<C().turns.length?T(nextK()).q:null;
+ $('sugg').innerHTML=nq?`<button class="sg" data-act="suggest"><b>Suggested ›</b>${nq.length>100?nq.slice(0,98)+'…':nq}</button>`:'';
+ $('tray').hidden=!UI.tray;if(UI.tray)$('tray').innerHTML=trayHTML();
+ $('side').hidden=!UI.side;if(UI.side)$('side').innerHTML=sideHTML();}
+function renderChat(){const f=focusN();
+ $('chatin').innerHTML=S().turns.length?S().turns.map((k,i)=>{const anc=path().find(j=>X().H[j].snap.turns.length===i);
+   return`<div class="um">${anc!=null?`<button class="rw" data-go="${anc}">↺ rewind to before this</button>`:''}<div class="ub">${T(k).q}</div></div>
+   <div class="am${i===f&&answeredIdx().length>1?' focus':''}" id="ans-${i}"><div class="meta"><span class="av">AI</span>${needsAsk(k)?'':stakesLine(i)}</div>${answer(i)}</div>
+   ${S().reports.filter(r=>r.after===i).map(report).join('')}`;}).join(''):`<p class="empty">How can I help?<small>${C().title} · ${C().cat}</small></p>`;}
+let PLAY=true;
+function send(){const k=nextK();if(k>=C().turns.length)return;S().turns.push(k);S().stakes=null;commit('Asked: '+T(k).q.split(' ').slice(0,4).join(' ')+'…');
+ setTimeout(()=>{const c=$('chat');const ums=c.querySelectorAll('.um');const u=ums[ums.length-1];if(u)c.scrollTo({top:u.offsetTop-12,behavior:PLAY?'auto':'smooth'});},30);}
+function setFact(f,v){UI.before={};S().turns.forEach((k,i)=>{UI.before[i]={};claimsOf(k).forEach(c=>{if(c.asm)UI.before[i][c.asm]=c.t;});});
+ S().facts[f]=v;S().origin[f]='you';UI.menu=null;commit(C().facts[f].label+': '+factLabel(f,v));}
+function tick(){let ch=false;for(const id in ST){const s=ST[id].s;for(const[k,t]of Object.entries(s.tasks)){if(t.status==='running'&&Date.now()-t.start>=t.dur*1000){t.status='done';s.reports.push({k,after:s.turns.length-1});ST[id].H[ST[id].cur].snap=clone(s);ch=true;}}}
+ if(ch)render();else if(UI.tray&&Object.values(S().tasks).some(t=>t.status==='running'))$('tray').innerHTML=trayHTML();}
+document.addEventListener('click',e=>{if(UI.convs&&!e.target.closest('#convs,#cswitch')){UI.convs=false;render();}const el=e.target.closest('[data-act],[data-open],[data-menu],[data-fact],[data-stakes],[data-focus],[data-jump],[data-dec],[data-go],[data-answer],[data-conv]');if(!el)return;const d=el.dataset;
+ if(d.conv){CV=d.conv;UI.open={};UI.menu=null;UI.before=null;UI.convs=false;return render();}
+ if(d.menu){UI.menu=UI.menu===d.menu?null:d.menu;return render();}
+ if(d.fact){const[f,v]=d.fact.split('=');if(S().facts[f]===v){UI.menu=null;return render();}return setFact(f,v);}
+ if(d.open){UI.open[d.open]=!UI.open[d.open];return render();}
+ if(d.stakes){const[n,v]=d.stakes.split(':');S().stakesAt=S().stakesAt||{};if(v==='auto')delete S().stakesAt[n];else S().stakesAt[n]=+v;UI.sopen={};return commit(v==='auto'?'Back to my suggestion':'Set to: '+NAMES[+v].toLowerCase());}
+ if(d.focus!=null){UI.focus=UI.focus||{};UI.focus[CV]=+d.focus;UI.sopen=UI.sopen||{};const key=CV+d.focus,was=UI.sopen[key];UI.sopen={};if(!was)UI.sopen[key]=true;render();const m=document.querySelector('.mstrip');if(m){m.classList.remove('flash');void m.offsetWidth;m.classList.add('flash');}return;}
+ if(d.jump!=null){UI.focus=UI.focus||{};UI.focus[CV]=+d.jump;render();const a=$('ans-'+d.jump);if(a)$('chat').scrollTo({top:a.offsetTop-(document.querySelector('.mstrip')?.offsetHeight||0)-60,behavior:'smooth'});return;}
+ if(d.dec!=null){UI.dec[CV+d.dec]=!UI.dec[CV+d.dec];return render();}
+ if(d.go!=null)return go(+d.go);
+ if(d.answer){const[f,v]=d.answer.split('=');S().facts[f]=v;S().origin[f]='you';return commit('Answered: '+factLabel(f,v));}
+ const a=d.act;
+ if(a==='tlsize'){const big=UI.tlBig!=null?UI.tlBig:(answeredIdx().length>=3||branched());UI.tlBig=!big;return render();}
+ if(a==='suggest'||a==='send'){$('ta').value='';UI.focus=UI.focus||{};delete UI.focus[CV];return send();}
+ if(a==='tray'){UI.tray=!UI.tray;return render();}
+ if(a==='side'){UI.side=!UI.side;return render();}
+ if(a==='convs'){UI.convs=!UI.convs;return render();}
+ if(a==='run'){document.querySelectorAll('.offer input[data-task]:checked').forEach(cb=>{S().tasks[cb.dataset.task]={start:Date.now(),dur:C().tasks[cb.dataset.task].min*SPEED,status:'running'};});return commit('Started background checks');}});
+document.addEventListener('input',e=>{if(e.target.id!=='mslider')return;const n=focusN(),v=+e.target.value;S().stakesAt=S().stakesAt||{};S().stakesAt[n]=v;renderChat();
+ document.querySelectorAll('.mst').forEach((b,i)=>b.classList.toggle('on',i+1===v));$('mshow').textContent='Shows '+SHOWS[v]+'.';if($('mcur'))$('mcur').textContent=NAMES[v];e.target.setAttribute('aria-valuetext',NAMES[v]);});
+document.addEventListener('change',e=>{if(e.target.id!=='mslider')return;const v=+e.target.value,had=document.activeElement===e.target;commit('Set to: '+NAMES[v].toLowerCase());if(had){const m=$('mslider');if(m)m.focus();}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='ta'){e.preventDefault();$('ta').value='';send();}if(e.key==='Escape'&&UI.menu){UI.menu=null;render();}});
+setInterval(tick,300);
+/* deep links: #answer (the evaluation link) · #health · #passport · #roth · #wash · #est · ?at= also accepted */
+const at=new URLSearchParams(location.search).get('at')||location.hash.slice(1);
+if(at==='answer'||at==='resid'||at==='critical'){send();send();if(at!=='answer'){send();send();}if(at==='critical'){S().facts.resid='unsure';S().origin.resid='you';commit('Answered: not sure');send();}}
+else if(SCN[at]){CV=at;}
+render();PLAY=false;
+</script>
+
+</html>
