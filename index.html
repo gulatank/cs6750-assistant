@@ -564,12 +564,12 @@ function stakesLine(n){const k=S().turns[n],t=T(k),auto=t.st,st=stakesOf(n),set=
  else txt=`Got it, showing more.`;
  const open=UI.sopen&&UI.sopen[CV+n];
  return`<div class="sline">${txt} <button class="dbtn" data-focus="${n}" aria-expanded="${!!open}">${open?'close':'change'}</button>${set?` <button class="dbtn" data-stakes="${n}:auto">use my suggestion</button>`:''}</div>
- ${open?`<div class="schoose" role="group" aria-label="How much does this matter to you?"><div class="sq">How much does this matter to you?</div>${[1,2,3,4].map(v=>`<button class="sopt${st===v?' on':''}" data-stakes="${n}:${v}" aria-pressed="${st===v}"><b>${NAMES[v]}</b>${v===auto?' <em>my suggestion</em>':''}<span>Shows ${SHOWS[v]}</span></button>`).join('')}</div>`:''}`;}
+ ${open?`<div class="schoose" role="group" aria-label="How risky is this for you?"><div class="sq">How risky is this for you?</div>${[1,2,3,4].map(v=>`<button class="sopt${st===v?' on':''}" data-stakes="${n}:${v}" aria-pressed="${st===v}"><b>${NAMES[v]}</b>${v===auto?' <em>my suggestion</em>':''}<span>Shows ${SHOWS[v]}</span></button>`).join('')}</div>`:''}`;}
 const answeredIdx=()=>S().turns.map((k,i)=>i).filter(i=>!needsAsk(S().turns[i]));
 function focusN(){const a=answeredIdx();if(!a.length)return null;const f=(UI.focus||{})[CV];return a.includes(f)?f:a[a.length-1];}
 function stripHTML(){const n=focusN();if(n==null)return'';const k=S().turns[n],auto=T(k).st,st=stakesOf(n);
  const set=S().stakesAt&&S().stakesAt[n]!=null;
- return`<div class="mstrip"><div class="mrow"><span>How much does this matter?</span><input type="range" id="mslider" min="1" max="4" step="1" value="${st}" aria-label="How much does this matter to you?" aria-valuetext="${NAMES[st]}"><span class="mcur" id="mcur">${NAMES[st]}</span></div>
+ return`<div class="mstrip"><div class="mrow"><span><b style="color:var(--ink)">Risk</b> · how much is at stake for you</span><input type="range" id="mslider" min="1" max="4" step="1" value="${st}" aria-label="How risky is this for you?" aria-valuetext="${NAMES[st]}"><span class="mcur" id="mcur">${NAMES[st]}</span></div>
   <div class="mnote"><span id="mshow">Shows ${SHOWS[st]}.</span> ${set?`<button class="dbtn" data-stakes="${n}:auto">use my suggestion (${NAMES[auto].toLowerCase()})</button>`:`<span>That is my suggestion; drag to change it.</span>`}</div></div>`;}
 function backNode(i){return path().find(j=>X().H[j].snap.turns.length===i+1);}
 function tlineHTML(){const a=answeredIdx();if(!a.length)return'';const f=focusN(),big=UI.tlBig!=null?UI.tlBig:(a.length>=3||branched());
