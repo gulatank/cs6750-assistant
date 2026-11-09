@@ -579,7 +579,7 @@ function stripHTML(){const n=focusN();if(n==null)return'';const k=S().turns[n],a
  return`<div class="mstrip"><div class="mrow"><span><b style="color:var(--ink)">Risk</b> · how much is at stake for you</span><input type="range" id="mslider" min="1" max="4" step="1" value="${st}" aria-label="How risky is this for you?" aria-valuetext="${NAMES[st]}"><span class="mcur" id="mcur">${NAMES[st]}</span></div>
   <div class="mnote"><span id="mshow">Shows ${SHOWS[st]}.</span> ${set?`<button class="dbtn" data-stakes="${n}:auto">use my suggestion (${NAMES[auto].toLowerCase()})</button>`:`<span>That is my suggestion; drag to change it.</span>`}</div></div>`;}
 function backNode(i){return path().find(j=>X().H[j].snap.turns.length===i+1);}
-function tlineHTML(){const a=answeredIdx();if(!a.length)return'';const f=focusN(),big=UI.tlBig!=null?UI.tlBig:(a.length>=3||branched());
+function tlineHTML(){const a=answeredIdx();if(!a.length)return'';const f=focusN(),big=UI.tlBig!=null?UI.tlBig:(a.length>=2||branched());
  return`<div class="tlh"><span class="h5" style="margin:0">Timeline</span><button class="dbtn" data-act="tlsize">${big?'smaller':'larger'}</button></div>
  ${branched()?`<div class="tlv"><div class="sys" style="margin:0 0 4px">Versions · click to switch</div>${vCards()}</div>`:''}
  <div class="tlr${big?' big':''}">${a.map(i=>{const k=S().turns[i],st=stakesOf(i),q=T(k).q,bn=backNode(i);return`<div class="tlrow"><button class="tls${i===f?' on':''}" data-jump="${i}" title="${NAMES[st]}: ${q.replace(/"/g,'&quot;')}"><i class="lv lv${st}"></i>${big?`<span><b>${NAMES[st]}</b>${q.length>54?q.slice(0,52)+'…':q}</span>`:''}</button>${bn!=null?`<button class="tlback" data-go="${bn}" title="Go back to here: the conversation returns to how it was when this was answered. Change something and you get a second version; nothing is lost." aria-label="Go back to here">↺${big?' go back to here':''}</button>`:''}</div>`;}).join('')}</div>
@@ -690,7 +690,7 @@ document.addEventListener('click',e=>{if(UI.convs&&!e.target.closest('#convs,#cs
  if(d.go!=null)return go(+d.go);
  if(d.answer){const[f,v]=d.answer.split('=');S().facts[f]=v;S().origin[f]='you';return commit('Answered: '+factLabel(f,v));}
  const a=d.act;
- if(a==='tlsize'){const big=UI.tlBig!=null?UI.tlBig:(answeredIdx().length>=3||branched());UI.tlBig=!big;return render();}
+ if(a==='tlsize'){const big=UI.tlBig!=null?UI.tlBig:(answeredIdx().length>=2||branched());UI.tlBig=!big;return render();}
  if(a==='suggest'||a==='send'){$('ta').value='';UI.focus=UI.focus||{};delete UI.focus[CV];return send();}
  if(a==='tray'){UI.tray=!UI.tray;return render();}
  if(a==='side'){UI.side=!UI.side;return render();}
