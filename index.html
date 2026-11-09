@@ -260,6 +260,11 @@ blockquote{background:none;border-left:2px solid var(--line2)}
 .comp{border-color:var(--line);box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .side{border-left:1px solid var(--line)}
 @media (max-width:980px){main.hastl .dock{right:0}}
+.vcard{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:5px 6px;margin:1px 0}
+.vcard:hover{background:var(--hov)}.vcard i{flex:none;width:10px;height:10px;border-radius:50%;border:2px solid var(--line2);margin-top:4px}
+.vcard.here i{border-color:var(--acc);background:var(--acc)}.vcard span{min-width:0}.vcard b{display:block;font-size:12.5px;font-weight:600;color:var(--ink)}
+.vcard small{display:block;font-size:12px;line-height:1.35;color:var(--mute)}
+.vcard.here b{color:var(--acc)}
 .am.focus{box-shadow:-14px 0 0 -12px var(--line2)}
 .h5{text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink2)}
 </style>
@@ -576,7 +581,7 @@ function stripHTML(){const n=focusN();if(n==null)return'';const k=S().turns[n],a
 function backNode(i){return path().find(j=>X().H[j].snap.turns.length===i+1);}
 function tlineHTML(){const a=answeredIdx();if(!a.length)return'';const f=focusN(),big=UI.tlBig!=null?UI.tlBig:(a.length>=3||branched());
  return`<div class="tlh"><span class="h5" style="margin:0">Timeline</span><button class="dbtn" data-act="tlsize">${big?'smaller':'larger'}</button></div>
- ${branched()?`<div class="tlv"><div class="sys" style="margin:0 0 2px">Your versions · click to switch</div>${pathCards()}</div>`:''}
+ ${branched()?`<div class="tlv"><div class="sys" style="margin:0 0 4px">Versions · click to switch</div>${vCards()}</div>`:''}
  <div class="tlr${big?' big':''}">${a.map(i=>{const k=S().turns[i],st=stakesOf(i),q=T(k).q,bn=backNode(i);return`<div class="tlrow"><button class="tls${i===f?' on':''}" data-jump="${i}" title="${NAMES[st]}: ${q.replace(/"/g,'&quot;')}"><i class="lv lv${st}"></i>${big?`<span><b>${NAMES[st]}</b>${q.length>54?q.slice(0,52)+'…':q}</span>`:''}</button>${bn!=null?`<button class="tlback" data-go="${bn}" title="Go back to here: the conversation returns to how it was when this was answered. Change something and you get a second version; nothing is lost." aria-label="Go back to here">↺${big?' go back to here':''}</button>`:''}</div>`;}).join('')}</div>
  <p class="sys tlhint">${branched()?'':'↺ goes back to any answer. Change something from there and you get a second version; nothing is lost.'}</p>`;}
 function calcCard(n){const k=S().turns[n],t=T(k);if(!t.calc)return'';const c=t.calc(S().facts),id='calc'+CV+n;
@@ -632,6 +637,12 @@ function graph(){const H=X().H,L=[],D=[],seen={};let nl=0;H.forEach((h,i)=>{if(i
  return`<svg width="${W}" height="${Hh}">${H.map((h,i)=>{if(!i)return'';const[a,b]=pt(h.parent),[c,d]=pt(i);return`<path d="M${a},${b} C${a+XS/2},${b} ${c-XS/2},${d} ${c},${d}" fill="none" style="stroke:${on.includes(i)?'var(--acc)':'var(--line2)'}" stroke-width="2"/>`;}).join('')}
  ${H.map((h,i)=>{const[x,y]=pt(i);return`<g data-go="${i}" style="cursor:pointer"><title>${h.label}</title><circle cx="${x}" cy="${y}" r="${i===X().cur?7:5}" style="fill:${on.includes(i)?'var(--acc)':'var(--card)'};stroke:${on.includes(i)?'var(--acc)':'var(--faint)'}" stroke-width="2"/></g>`;}).join('')}</svg>`;}
 function outcomeOf(snap){let best=null;snap.turns.forEach(k=>{const t=T(k);if(t.ask&&snap.origin[t.ask.key]==='unknown')return;if(!best||t.st>=T(best).st)best=k;});return best==null?'No answer yet':T(best).short(snap.facts);}
+function vCards(){const H=X().H,leaves=H.map((h,i)=>i).filter(i=>!kids(i).length);
+ const fs=Object.keys(C().facts).filter(f=>new Set(leaves.map(i=>H[i].snap.facts[f])).size>1);
+ const short=(f,v)=>{const t=factLabel(f,v).replace(/^not sure you were a /,'not sure if ').replace(/^(you were |your |the )/,'').replace(/, about .*$/,'');return f==='joint'?'joint: '+t:f==='bal'?'home: '+t:t;};
+ return leaves.map((i,ix)=>{const sn=H[i].snap,here=i===X().cur||(path(i).includes(X().cur)&&kids(X().cur).length<=1);
+  const diff=fs.map(f=>short(f,sn.facts[f])).join(' · ')||'original',out=outcomeOf(sn),verdict=out.split(/[:.]/)[0];
+  return`<button class="vcard${here?' here':''}" data-go="${i}" title="Version ${ix+1}: ${out.replace(/"/g,'&quot;')}"><i></i><span><b>${verdict}</b><small>${diff}</small></span></button>`;}).join('');}
 function pathCards(){const H=X().H,leaves=H.map((h,i)=>i).filter(i=>!kids(i).length);
  return leaves.map((i,ix)=>{const sn=H[i].snap,set=Object.keys(sn.origin).filter(f=>sn.origin[f]==='you'&&!C().facts[f].said).map(f=>`${C().facts[f].label}: <b>${factLabel(f,sn.facts[f])}</b>`);
   const here=i===X().cur||(path(i).includes(X().cur)&&kids(X().cur).length<=1);
